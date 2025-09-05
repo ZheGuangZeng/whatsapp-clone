@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/message.dart';
+import '../../../file_storage/domain/entities/file_entity.dart';
+import '../../../file_storage/presentation/widgets/file_preview_widget.dart';
+import '../../../file_storage/presentation/providers/file_providers.dart';
 
 /// Widget representing a message bubble in the chat
-class MessageBubble extends StatelessWidget {
+class MessageBubble extends ConsumerWidget {
   const MessageBubble({
     super.key,
     required this.message,
@@ -20,7 +24,7 @@ class MessageBubble extends StatelessWidget {
   final Function(String emoji)? onReact;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     
     return GestureDetector(
@@ -95,7 +99,7 @@ class MessageBubble extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Message content
-                          _buildMessageContent(context),
+                          _buildMessageContent(context, ref),
                           
                           // Message metadata
                           const SizedBox(height: 4),
@@ -166,7 +170,13 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildMessageContent(BuildContext context) {
+  Widget _buildMessageContent(BuildContext context, WidgetRef ref) {
+    // Check if message has file attachment in metadata
+    final fileId = message.metadata['file_id'] as String?;
+    if (fileId != null) {
+      return _buildFileAttachment(context, ref, fileId);
+    }
+
     switch (message.type) {
       case MessageType.text:
         return Text(
@@ -179,84 +189,11 @@ class MessageBubble extends StatelessWidget {
         );
       
       case MessageType.image:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.grey.shade300,
-              ),
-              child: const Center(
-                child: Icon(Icons.image, size: 50),
-              ),
-            ),
-            if (message.content.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                message.content,
-                style: TextStyle(
-                  color: isMe
-                      ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ],
-        );
-      
-      case MessageType.file:
-        return Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.attach_file, size: 20),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  message.content.isNotEmpty ? message.content : 'File',
-                  style: TextStyle(
-                    color: isMe
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      
+      case MessageType.video:
       case MessageType.audio:
-        return Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.play_arrow, size: 24),
-              const SizedBox(width: 8),
-              Container(
-                width: 100,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade400,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text('0:30'),
-            ],
-          ),
-        );
+      case MessageType.file:
+        // If we have a file type but no fileId, show placeholder
+        return _buildFilePlaceholder(context, message.type);
       
       default:
         return Text(
@@ -267,6 +204,330 @@ class MessageBubble extends StatelessWidget {
                 : Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         );
+    }
+  }
+
+  Widget _buildFileAttachment(BuildContext context, WidgetRef ref, String fileId) {
+    final fileCache = ref.watch(fileCacheProvider);
+    final cachedFile = fileCache[fileId];
+
+    if (cachedFile != null) {
+      return _buildFileContent(context, cachedFile);
+    }
+
+    // Load file from repository
+    return FutureBuilder<FileEntity?>(
+      future: _loadFile(ref, fileId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            height: 100,
+            width: 200,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (snapshot.hasError || snapshot.data == null) {
+          return _buildFilePlaceholder(context, message.type);
+        }
+
+        return _buildFileContent(context, snapshot.data!);
+      },
+    );
+  }
+
+  Widget _buildFileContent(BuildContext context, FileEntity file) {
+    switch (file.fileType) {
+      case FileType.image:
+        return _buildImageContent(context, file);
+      case FileType.video:
+        return _buildVideoContent(context, file);
+      case FileType.audio:
+        return _buildAudioContent(context, file);
+      case FileType.document:
+      case FileType.other:
+        return _buildDocumentContent(context, file);
+    }
+  }
+
+  Widget _buildImageContent(BuildContext context, FileEntity file) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            constraints: const BoxConstraints(
+              maxHeight: 200,
+              maxWidth: 250,
+            ),
+            child: FilePreviewWidget(
+              file: file,
+              showFileName: false,
+              showFileSize: false,
+              showDownloadButton: false,
+            ),
+          ),
+        ),
+        if (message.content.isNotEmpty && message.content != file.originalName) ...[
+          const SizedBox(height: 8),
+          Text(
+            message.content,
+            style: TextStyle(
+              color: isMe
+                  ? Theme.of(context).colorScheme.onPrimary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildVideoContent(BuildContext context, FileEntity file) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            constraints: const BoxConstraints(
+              maxHeight: 200,
+              maxWidth: 250,
+            ),
+            child: FilePreviewWidget(
+              file: file,
+              showFileName: false,
+              showFileSize: false,
+              showDownloadButton: false,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.videocam, size: 16),
+            const SizedBox(width: 4),
+            Text(
+              file.formattedSize,
+              style: TextStyle(
+                fontSize: 12,
+                color: isMe
+                    ? Theme.of(context).colorScheme.onPrimary.withOpacity(0.8)
+                    : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
+              ),
+            ),
+          ],
+        ),
+        if (message.content.isNotEmpty && message.content != file.originalName) ...[
+          const SizedBox(height: 8),
+          Text(
+            message.content,
+            style: TextStyle(
+              color: isMe
+                  ? Theme.of(context).colorScheme.onPrimary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildAudioContent(BuildContext context, FileEntity file) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isMe
+            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+            : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.play_arrow,
+            size: 32,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  file.originalName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: isMe
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  file.formattedSize,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isMe
+                        ? Theme.of(context).colorScheme.onPrimary.withOpacity(0.7)
+                        : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentContent(BuildContext context, FileEntity file) {
+    IconData icon;
+    Color iconColor;
+
+    switch (file.extension) {
+      case 'pdf':
+        icon = Icons.picture_as_pdf;
+        iconColor = Colors.red;
+        break;
+      case 'doc':
+      case 'docx':
+        icon = Icons.description;
+        iconColor = Colors.blue;
+        break;
+      case 'xls':
+      case 'xlsx':
+        icon = Icons.table_chart;
+        iconColor = Colors.green;
+        break;
+      case 'ppt':
+      case 'pptx':
+        icon = Icons.slideshow;
+        iconColor = Colors.orange;
+        break;
+      default:
+        icon = Icons.insert_drive_file;
+        iconColor = Colors.grey;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isMe
+            ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+            : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 32, color: iconColor),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  file.originalName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: isMe
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  file.formattedSize,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isMe
+                        ? Theme.of(context).colorScheme.onPrimary.withOpacity(0.7)
+                        : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilePlaceholder(BuildContext context, MessageType messageType) {
+    IconData icon;
+    String label;
+
+    switch (messageType) {
+      case MessageType.image:
+        icon = Icons.image;
+        label = 'Image';
+        break;
+      case MessageType.video:
+        icon = Icons.videocam;
+        label = 'Video';
+        break;
+      case MessageType.audio:
+        icon = Icons.audiotrack;
+        label = 'Audio';
+        break;
+      case MessageType.file:
+        icon = Icons.attach_file;
+        label = 'File';
+        break;
+      default:
+        icon = Icons.insert_drive_file;
+        label = 'Attachment';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 24, color: Colors.grey.shade600),
+          const SizedBox(width: 8),
+          Text(
+            '$label (unavailable)',
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<FileEntity?> _loadFile(WidgetRef ref, String fileId) async {
+    try {
+      final fileRepository = ref.read(fileRepositoryProvider);
+      final result = await fileRepository.getFileMetadata('', fileId);
+      
+      return result.fold(
+        (failure) => null,
+        (file) {
+          // Cache the file
+          ref.read(fileCacheProvider.notifier).addFile(file);
+          return file;
+        },
+      );
+    } catch (e) {
+      return null;
     }
   }
 

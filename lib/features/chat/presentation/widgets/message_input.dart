@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 
 import '../providers/chat_providers.dart';
+import '../../../file_storage/presentation/widgets/file_picker_widget.dart';
+import '../../../file_storage/presentation/providers/file_providers.dart';
+import '../../../file_storage/domain/entities/file_entity.dart';
+import '../../../file_storage/domain/usecases/upload_file_usecase.dart';
+import '../../../../core/constants/app_constants.dart';
 
 /// Widget for composing and sending messages
 class MessageInput extends ConsumerStatefulWidget {
@@ -12,7 +20,7 @@ class MessageInput extends ConsumerStatefulWidget {
   });
 
   final String roomId;
-  final Function(String content, {String? replyToId}) onSendMessage;
+  final Function(String content, {String? replyToId, FileEntity? fileAttachment}) onSendMessage;
 
   @override
   ConsumerState<MessageInput> createState() => _MessageInputState();
@@ -321,24 +329,116 @@ class _MessageInputState extends ConsumerState<MessageInput> {
     );
   }
 
-  void _pickFromGallery() {
-    // TODO: Implement gallery picker
+  Future<void> _pickFromGallery() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      
+      if (image != null) {
+        await _uploadAndSendFile(File(image.path));
+      }
+    } catch (e) {
+      _showError('Failed to pick image: ${e.toString()}');
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.camera);
+      
+      if (image != null) {
+        await _uploadAndSendFile(File(image.path));
+      }
+    } catch (e) {
+      _showError('Failed to take photo: ${e.toString()}');
+    }
+  }
+
+  Future<void> _pickDocument() async {
+    try {
+      final FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: AppConstants.supportedDocumentTypes,
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        await _uploadAndSendFile(File(result.files.single.path!));
+      }
+    } catch (e) {
+      _showError('Failed to pick document: ${e.toString()}');
+    }
+  }
+
+  /// Upload file and send as message
+  Future<void> _uploadAndSendFile(File file) async {
+    try {
+      // Show upload dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          title: Text('Uploading File'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Please wait while your file is being uploaded...'),
+            ],
+          ),
+        ),
+      );
+
+      final uploadFileUseCase = ref.read(uploadFileUseCaseProvider);
+      final result = await uploadFileUseCase(UploadFileParams(
+        file: file,
+        bucket: AppConstants.chatMediaBucket,
+        compressionQuality: 80,
+        generateThumbnail: true,
+      ));
+
+      // Close upload dialog
+      Navigator.of(context).pop();
+
+      result.fold(
+        (failure) {
+          _showError('Upload failed: ${failure.toString()}');
+        },
+        (fileEntity) {
+          // Send message with file attachment
+          final fileName = fileEntity.originalName;
+          widget.onSendMessage(
+            fileName, // Use filename as message content
+            fileAttachment: fileEntity,
+          );
+
+          _showSuccess('File uploaded successfully');
+        },
+      );
+    } catch (e) {
+      // Close upload dialog if still open
+      Navigator.of(context).pop();
+      _showError('Upload error: ${e.toString()}');
+    }
+  }
+
+  void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Gallery picker coming soon!')),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
     );
   }
 
-  void _takePhoto() {
-    // TODO: Implement camera
+  void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Camera coming soon!')),
-    );
-  }
-
-  void _pickDocument() {
-    // TODO: Implement document picker
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Document picker coming soon!')),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
     );
   }
 

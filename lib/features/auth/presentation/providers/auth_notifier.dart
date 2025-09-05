@@ -28,6 +28,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _listenToAuthChanges();
   }
 
+  /// Public initialize method for manual initialization
+  Future<void> initialize() async {
+    await _getCurrentSession();
+  }
+
   /// Get current session on app start
   Future<void> _getCurrentSession() async {
     state = state.copyWith(isLoading: true);

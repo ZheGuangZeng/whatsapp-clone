@@ -133,6 +133,17 @@ class Room extends Equatable {
         unreadCount,
       ];
 
+  /// Creates an empty room for loading states
+  factory Room.empty() {
+    return Room(
+      id: '',
+      type: RoomType.direct,
+      createdBy: '',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
   /// Creates a copy of this room with updated fields
   Room copyWith({
     String? id,

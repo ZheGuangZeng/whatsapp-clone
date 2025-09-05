@@ -30,6 +30,14 @@ dependencies:
   # Media Handling
   image_picker: ^1.0.4
   file_picker: ^6.1.1
+  image: ^4.1.7
+  video_thumbnail: ^0.5.3
+  path_provider: ^2.1.1
+  mime: ^1.0.4
+  
+  # File Compression
+  flutter_image_compress: ^2.1.0
+  video_compress: ^3.1.2
   
   # Permissions
   permission_handler: ^11.0.1

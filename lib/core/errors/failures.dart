@@ -39,3 +39,13 @@ class PermissionFailure extends Failure {
 class ValidationFailure extends Failure {
   const ValidationFailure({required super.message});
 }
+
+/// Authorization-related failures
+class UnauthorizedFailure extends Failure {
+  const UnauthorizedFailure({required super.message});
+}
+
+/// Unknown/unexpected failures
+class UnknownFailure extends Failure {
+  const UnknownFailure({required super.message});
+}

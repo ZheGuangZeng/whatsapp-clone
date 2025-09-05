@@ -13,9 +13,19 @@ class ChatRoomPage extends ConsumerStatefulWidget {
   const ChatRoomPage({
     super.key,
     required this.room,
+    this.roomId,
   });
 
+  /// Factory constructor for creating ChatRoomPage from room ID
+  factory ChatRoomPage.fromId(String roomId) {
+    return ChatRoomPage(
+      room: Room.empty(), // Temporary empty room, will be loaded from provider
+      roomId: roomId,
+    );
+  }
+
   final Room room;
+  final String? roomId;
 
   @override
   ConsumerState<ChatRoomPage> createState() => _ChatRoomPageState();
@@ -24,6 +34,7 @@ class ChatRoomPage extends ConsumerStatefulWidget {
 class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
   final _scrollController = ScrollController();
   late final String _currentUserId;
+  Room? _actualRoom;
 
   @override
   void initState() {
@@ -32,9 +43,19 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
     // Setup scroll listener for pagination
     _scrollController.addListener(_onScroll);
     
+    // If roomId is provided, we need to load the room first
+    if (widget.roomId != null) {
+      _actualRoom = null; // Will be loaded from provider
+    } else {
+      _actualRoom = widget.room;
+    }
+    
     // Load initial messages
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(loadMoreMessagesProvider(widget.room.id).notifier).loadInitialMessages();
+      final roomId = widget.roomId ?? widget.room.id;
+      if (roomId.isNotEmpty) {
+        ref.read(loadMoreMessagesProvider(roomId).notifier).loadInitialMessages();
+      }
     });
   }
 
@@ -52,13 +73,106 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
       // Load more messages when near the end
-      ref.read(loadMoreMessagesProvider(widget.room.id).notifier).loadMoreMessages();
+      final roomId = widget.roomId ?? widget.room.id;
+      if (roomId.isNotEmpty) {
+        ref.read(loadMoreMessagesProvider(roomId).notifier).loadMoreMessages();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final messagesAsync = ref.watch(messagesStreamProvider(widget.room.id));
+    // If roomId is provided instead of room, load the room first
+    if (widget.roomId != null) {
+      return _buildFromRoomId(context);
+    }
+    
+    return _buildChatRoom(context, widget.room);
+  }
+
+  Widget _buildFromRoomId(BuildContext context) {
+    final roomsAsync = ref.watch(roomsStreamProvider);
+
+    return roomsAsync.when(
+      loading: () => const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      error: (error, stack) => Scaffold(
+        appBar: AppBar(title: const Text('Error')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Failed to load chat',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Go Back'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (rooms) {
+        final room = rooms.where((r) => r.id == widget.roomId!).firstOrNull;
+        
+        if (room == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Chat Not Found')),
+            body: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.chat_bubble_outline,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Chat not found',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'This chat may have been deleted or you may not have access to it.',
+                    style: TextStyle(color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return _buildChatRoom(context, room);
+      },
+    );
+  }
+
+  Widget _buildChatRoom(BuildContext context, Room room) {
+    final messagesAsync = ref.watch(messagesStreamProvider(room.id));
     final authState = ref.watch(authNotifierProvider);
     
     // Get current user ID from auth state
@@ -72,12 +186,12 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundImage: widget.room.getAvatarUrl(_currentUserId) != null
-                  ? NetworkImage(widget.room.getAvatarUrl(_currentUserId)!)
+              backgroundImage: room.getAvatarUrl(_currentUserId) != null
+                  ? NetworkImage(room.getAvatarUrl(_currentUserId)!)
                   : null,
-              child: widget.room.getAvatarUrl(_currentUserId) == null
+              child: room.getAvatarUrl(_currentUserId) == null
                   ? Text(
-                      widget.room.getDisplayName(_currentUserId).substring(0, 1).toUpperCase(),
+                      room.getDisplayName(_currentUserId).substring(0, 1).toUpperCase(),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     )
                   : null,
@@ -88,15 +202,15 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.room.getDisplayName(_currentUserId),
+                    room.getDisplayName(_currentUserId),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  if (widget.room.isGroupChat)
+                  if (room.isGroupChat)
                     Text(
-                      '${widget.room.activeParticipants.length} members',
+                      '${room.activeParticipants.length} members',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Colors.grey,
@@ -249,11 +363,11 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
           ),
           
           // Typing indicator
-          TypingIndicator(roomId: widget.room.id),
+          TypingIndicator(roomId: room.id),
           
           // Message input
           MessageInput(
-            roomId: widget.room.id,
+            roomId: room.id,
             onSendMessage: _sendMessage,
           ),
         ],
@@ -275,7 +389,8 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
   }
 
   void _sendMessage(String content, {String? replyToId}) {
-    ref.read(sendMessageProvider(widget.room.id).notifier).sendMessage(
+    final roomId = widget.roomId ?? widget.room.id;
+    ref.read(sendMessageProvider(roomId).notifier).sendMessage(
           content: content,
           replyTo: replyToId,
         );
@@ -283,7 +398,8 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
 
   void _replyToMessage(message) {
     // Set reply-to state
-    ref.read(replyToMessageProvider(widget.room.id).notifier).state = message;
+    final roomId = widget.roomId ?? widget.room.id;
+    ref.read(replyToMessageProvider(roomId).notifier).state = message;
   }
 
   void _reactToMessage(String messageId, String emoji) {
