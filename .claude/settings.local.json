@@ -14,7 +14,12 @@
       "Bash(gh extension:*)",
       "Bash(gh sub-issue create:*)",
       "Bash(gh issue comment:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git worktree:*)",
+      "Read(//Users/paul/Dev/CCPM/epic-whatsapp-clone/**)",
+      "Bash(gh issue list:*)"
     ],
     "deny": [],
     "ask": []
