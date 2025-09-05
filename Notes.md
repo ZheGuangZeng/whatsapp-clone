@@ -122,3 +122,10 @@ ccpm 设置需要采用 官方推荐方式？
   providing a complete foundation for all future development
   decisions and maintaining consistency across the entire project
    lifecycle! 🚀
+
+
+  #
+  当任务中断之后，再回来之后，还是继续执行  /pm:epic-start 吗？ 
+
+  #
+  为我详细讲解 ccpm 每个命令的作用以及如何使用？还有命令直接的使用流程？在各个场景下，该使用哪些命令？最常见的是任务因为 usage limit 被中断了，如何继续任务？
