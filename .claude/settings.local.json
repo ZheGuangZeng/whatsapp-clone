@@ -5,7 +5,10 @@
       "Bash(git checkout:*)",
       "Bash(chmod:*)",
       "Bash(git config:*)",
-      "WebFetch(domain:agentic.so)"
+      "WebFetch(domain:agentic.so)",
+      "Bash(/pm:prd-new tdd-refactor)",
+      "Bash(/pm:epic-oneshot tdd-refactor)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []
