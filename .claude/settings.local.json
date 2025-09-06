@@ -4,7 +4,8 @@
       "Bash(flutter clean:*)",
       "Bash(git checkout:*)",
       "Bash(chmod:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "WebFetch(domain:agentic.so)"
     ],
     "deny": [],
     "ask": []

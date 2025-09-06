@@ -37,6 +37,7 @@ dependencies:
   video_thumbnail: ^0.5.3
   path_provider: ^2.1.1
   mime: ^1.0.4
+  uuid: ^4.4.0
   
   # File Compression
   flutter_image_compress: ^2.1.0
