@@ -66,4 +66,7 @@ class AuthSessionModel {
       tokenType: tokenType,
     );
   }
+
+  /// Checks if the session is expired
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
 }

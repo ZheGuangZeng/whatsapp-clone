@@ -8,7 +8,8 @@
       "WebFetch(domain:agentic.so)",
       "Bash(/pm:prd-new tdd-refactor)",
       "Bash(/pm:epic-oneshot tdd-refactor)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "WebFetch(domain:pub.dev)"
     ],
     "deny": [],
     "ask": []

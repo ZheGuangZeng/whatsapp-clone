@@ -17,7 +17,7 @@ sealed class AuthState extends Equatable {
   const factory AuthState.authenticated(AuthSession session) = AuthenticatedState;
 
   /// Unauthenticated state when user is not logged in
-  const factory AuthState.unauthenticated({bool isFirstTime = false}) = UnauthenticatedState;
+  const factory AuthState.unauthenticated({bool? isFirstTime}) = UnauthenticatedState;
 
   /// Verification required state after registration
   const factory AuthState.verificationRequired({
@@ -30,7 +30,7 @@ sealed class AuthState extends Equatable {
   const factory AuthState.error(String message) = ErrorState;
 
   /// Whether the state is loading
-  bool get isLoading => this is LoadingState || (this is! ErrorState && this is! UnauthenticatedState && this is! AuthenticatedState && this is! VerificationRequiredState);
+  bool get isLoading => this is LoadingState;
 
   /// Whether the user is authenticated
   bool get isAuthenticated => this is AuthenticatedState;
@@ -104,7 +104,7 @@ final class AuthenticatedState extends AuthState {
 
 /// State when user is not authenticated
 final class UnauthenticatedState extends AuthState {
-  const UnauthenticatedState({this.isFirstTime = false});
+  const UnauthenticatedState({bool? isFirstTime}) : isFirstTime = isFirstTime ?? false;
 
   final bool isFirstTime;
 

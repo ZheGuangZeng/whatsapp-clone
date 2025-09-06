@@ -38,9 +38,9 @@ class AuthRepository implements IAuthRepository {
       }
 
       // Try to refresh if we have a cached refresh token
-      final refreshToken = await _localDataSource.getCachedRefreshToken();
-      if (refreshToken != null) {
-        final refreshResult = await refreshToken(refreshToken: refreshToken);
+      final cachedRefreshToken = await _localDataSource.getCachedRefreshToken();
+      if (cachedRefreshToken != null) {
+        final refreshResult = await refreshToken(refreshToken: cachedRefreshToken);
         return refreshResult;
       }
 
