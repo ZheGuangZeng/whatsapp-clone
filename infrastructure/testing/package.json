@@ -1,0 +1,27 @@
+{
+  "name": "whatsapp-clone-testing",
+  "version": "1.0.0",
+  "description": "Load testing and performance validation for WhatsApp Clone",
+  "scripts": {
+    "test:load": "k6 run load-test.js",
+    "test:load:web": "k6 run --env K6_SCENARIO=web_load load-test.js",
+    "test:load:messaging": "k6 run --env K6_SCENARIO=messaging load-test.js",
+    "test:load:meetings": "k6 run --env K6_SCENARIO=meetings load-test.js",
+    "test:load:china": "k6 run --env K6_SCENARIO=china_network load-test.js",
+    "test:smoke": "k6 run --vus 1 --duration 1m load-test.js",
+    "test:spike": "k6 run --stage 1m:1000 --stage 1m:1000 --stage 1m:1 load-test.js",
+    "test:soak": "k6 run --vus 100 --duration 2h load-test.js",
+    "test:stress": "k6 run --stage 5m:100 --stage 10m:200 --stage 5m:300 --stage 10m:400 --stage 5m:0 load-test.js"
+  },
+  "devDependencies": {
+    "k6": "^0.47.0"
+  },
+  "keywords": [
+    "load-testing",
+    "performance",
+    "k6",
+    "whatsapp-clone"
+  ],
+  "author": "WhatsApp Clone Team",
+  "license": "MIT"
+}

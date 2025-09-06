@@ -1,0 +1,44 @@
+# Analysis options for WhatsApp Clone Flutter project
+# This configuration enforces clean code practices and architecture guidelines
+
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/*.gr.dart"
+  
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    # Style rules
+    prefer_single_quotes: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_const_literals_to_create_immutables: true
+    
+    # Error prevention
+    avoid_print: false  # Allow for debugging
+    avoid_unnecessary_containers: true
+    avoid_web_libraries_in_flutter: true
+    avoid_void_async: true
+    
+    # Code organization
+    directives_ordering: true
+    sort_child_properties_last: true
+    sort_constructors_first: true
+    sort_unnamed_constructors_first: true
+    
+    # Performance
+    avoid_slow_async_io: true
+    
+    # Documentation
+    public_member_api_docs: false  # Can be enabled later if needed
+    
+    # Clean architecture enforcement
+    depend_on_referenced_packages: true

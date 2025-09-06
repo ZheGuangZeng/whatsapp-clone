@@ -19,7 +19,9 @@
       "Bash(git push:*)",
       "Bash(git worktree:*)",
       "Read(//Users/paul/Dev/CCPM/epic-whatsapp-clone/**)",
-      "Bash(gh issue list:*)"
+      "Bash(gh issue list:*)",
+      "Read(//Users/paul/Desktop/**)",
+      "WebFetch(domain:claude.ai)"
     ],
     "deny": [],
     "ask": []
