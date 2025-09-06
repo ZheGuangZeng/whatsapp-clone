@@ -49,3 +49,23 @@ class UnauthorizedFailure extends Failure {
 class UnknownFailure extends Failure {
   const UnknownFailure({required super.message});
 }
+
+/// Storage-related failures (file operations)
+class StorageFailure extends Failure {
+  const StorageFailure(String message) : super(message: message);
+}
+
+/// Database-related failures
+class DatabaseFailure extends Failure {
+  const DatabaseFailure(String message) : super(message: message);
+}
+
+/// Processing-related failures (image/video processing)
+class ProcessingFailure extends Failure {
+  const ProcessingFailure(String message) : super(message: message);
+}
+
+/// Not implemented functionality failures
+class NotImplementedFailure extends Failure {
+  const NotImplementedFailure(String message) : super(message: message);
+}

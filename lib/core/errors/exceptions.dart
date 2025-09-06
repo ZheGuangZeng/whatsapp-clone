@@ -37,3 +37,13 @@ class PermissionException extends AppException {
 class ValidationException extends AppException {
   const ValidationException(super.message);
 }
+
+/// Database-related exceptions
+class DatabaseException extends AppException {
+  const DatabaseException(super.message);
+}
+
+/// Storage-related exceptions
+class StorageException extends AppException {
+  const StorageException(super.message);
+}

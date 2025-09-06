@@ -104,7 +104,7 @@ class Message extends Equatable {
   bool get isReply => replyTo != null;
 
   /// Whether this message is a system message
-  bool get isSystemMessage => type == MessageType.text;
+  bool get isSystemMessage => type == MessageType.system;
 
   @override
   List<Object?> get props => [

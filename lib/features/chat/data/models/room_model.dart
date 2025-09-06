@@ -19,10 +19,8 @@ class RoomModel extends Room {
     super.lastMessageAt,
     required super.createdAt,
     required super.updatedAt,
-    super.participants,
-    super.lastMessage,
     super.unreadCount,
-  });
+  }) : super(participants: const [], lastMessage: null);
 
   /// Creates RoomModel from JSON
   factory RoomModel.fromJson(Map<String, dynamic> json) =>

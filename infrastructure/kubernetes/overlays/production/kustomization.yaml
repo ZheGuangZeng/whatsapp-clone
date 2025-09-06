@@ -1,0 +1,50 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: whatsapp-clone-production
+
+# Base configuration
+bases:
+- ../../base
+
+# Production namespace
+namespace: whatsapp-clone-prod
+
+# Production-specific labels
+commonLabels:
+  environment: production
+  region: ap-southeast-1
+
+# Production image tag
+images:
+- name: whatsapp-clone
+  newTag: v1.0.0
+
+# Resource scaling for production
+replicas:
+- name: whatsapp-clone-web
+  count: 10
+
+# Production patches
+patchesStrategicMerge:
+- deployment-patch.yaml
+- configmap-patch.yaml
+- ingress-patch.yaml
+- hpa-patch.yaml
+
+# Production secrets (encrypted)
+secretGenerator:
+- name: whatsapp-clone-secrets
+  behavior: replace
+  envs:
+  - production.env
+
+# Resource requirements patch
+patchesJson6902:
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: whatsapp-clone-web
+  path: resource-limits-patch.yaml

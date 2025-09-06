@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:mime/mime.dart';
 import 'package:image/image.dart' as img;
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/errors/exceptions.dart';
+import '../../../../core/errors/exceptions.dart' as exceptions;
 import '../models/file_model.dart';
 import '../../domain/entities/file_entity.dart';
 
@@ -31,7 +31,7 @@ class FileStorageSource {
     try {
       // Validate file exists
       if (!await file.exists()) {
-        throw const StorageException('File does not exist');
+        throw const exceptions.StorageException('File does not exist');
       }
 
       // Get file info
@@ -154,7 +154,7 @@ class FileStorageSource {
 
       return fileEntity;
     } catch (e) {
-      throw StorageException('Failed to upload file: ${e.toString()}');
+      throw exceptions.StorageException('Failed to upload file: ${e.toString()}');
     }
   }
 
@@ -192,7 +192,7 @@ class FileStorageSource {
 
       return result;
     } catch (e) {
-      throw StorageException('Failed to upload from bytes: ${e.toString()}');
+      throw exceptions.StorageException('Failed to upload from bytes: ${e.toString()}');
     }
   }
 
@@ -217,7 +217,7 @@ class FileStorageSource {
 
       return localFile;
     } catch (e) {
-      throw StorageException('Failed to download file: ${e.toString()}');
+      throw exceptions.StorageException('Failed to download file: ${e.toString()}');
     }
   }
 
@@ -228,7 +228,7 @@ class FileStorageSource {
           .from(_getBucketFromPath(file.storagePath))
           .download(file.storagePath);
     } catch (e) {
-      throw StorageException('Failed to get file bytes: ${e.toString()}');
+      throw exceptions.StorageException('Failed to get file bytes: ${e.toString()}');
     }
   }
 
@@ -246,7 +246,7 @@ class FileStorageSource {
             .getPublicUrl(file.storagePath);
       }
     } catch (e) {
-      throw StorageException('Failed to get file URL: ${e.toString()}');
+      throw exceptions.StorageException('Failed to get file URL: ${e.toString()}');
     }
   }
 
@@ -273,7 +273,7 @@ class FileStorageSource {
           .delete()
           .eq('id', file.id);
     } catch (e) {
-      throw StorageException('Failed to delete file: ${e.toString()}');
+      throw exceptions.StorageException('Failed to delete file: ${e.toString()}');
     }
   }
 
@@ -288,7 +288,7 @@ class FileStorageSource {
 
       return FileModel.fromJson(response);
     } catch (e) {
-      throw DatabaseException('Failed to get file metadata: ${e.toString()}');
+      throw exceptions.DatabaseException('Failed to get file metadata: ${e.toString()}');
     }
   }
 
@@ -331,7 +331,7 @@ class FileStorageSource {
           .map((json) => FileModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      throw DatabaseException('Failed to list files: ${e.toString()}');
+      throw exceptions.DatabaseException('Failed to list files: ${e.toString()}');
     }
   }
 
@@ -454,7 +454,7 @@ class FileStorageSource {
           .from(AppConstants.filesTable)
           .upsert(file.toJson());
     } catch (e) {
-      throw DatabaseException('Failed to save file metadata: ${e.toString()}');
+      throw exceptions.DatabaseException('Failed to save file metadata: ${e.toString()}');
     }
   }
 

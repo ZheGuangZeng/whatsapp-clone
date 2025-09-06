@@ -5,7 +5,7 @@ import '../../domain/entities/message.dart';
 part 'message_model.g.dart';
 
 /// Data model for Message entity with JSON serialization
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class MessageModel extends Message {
   const MessageModel({
     required super.id,
@@ -20,8 +20,7 @@ class MessageModel extends Message {
     required super.createdAt,
     required super.updatedAt,
     super.status,
-    super.reactions,
-  });
+  }) : super(reactions: const []);
 
   /// Creates MessageModel from JSON
   factory MessageModel.fromJson(Map<String, dynamic> json) =>

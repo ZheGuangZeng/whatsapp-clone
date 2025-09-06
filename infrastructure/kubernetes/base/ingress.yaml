@@ -1,0 +1,91 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: whatsapp-clone-ingress
+  labels:
+    app: whatsapp-clone
+  annotations:
+    # AWS Load Balancer Controller
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: ""
+    
+    # China-specific routing optimization
+    alb.ingress.kubernetes.io/load-balancer-attributes: routing.http2.enabled=true,idle_timeout.timeout_seconds=60
+    
+    # Security headers
+    alb.ingress.kubernetes.io/actions.response-headers: |
+      {
+        "type": "response-headers",
+        "responseHeadersConfig": {
+          "customHeaders": [
+            {"name": "X-Frame-Options", "value": "SAMEORIGIN"},
+            {"name": "X-XSS-Protection", "value": "1; mode=block"},
+            {"name": "X-Content-Type-Options", "value": "nosniff"},
+            {"name": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload"},
+            {"name": "Referrer-Policy", "value": "no-referrer-when-downgrade"}
+          ]
+        }
+      }
+    
+    # Rate limiting
+    alb.ingress.kubernetes.io/wafv2-acl-arn: ""
+    
+    # Health check configuration
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '30'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
+    alb.ingress.kubernetes.io/healthy-threshold-count: '2'
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: '3'
+spec:
+  rules:
+  - host: whatsappclone.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: response-headers
+            port:
+              name: use-annotation
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: whatsapp-clone-web-service
+            port:
+              number: 80
+  - host: www.whatsappclone.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: whatsapp-clone-web-service
+            port:
+              number: 80
+  - host: sg.whatsappclone.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: whatsapp-clone-web-service
+            port:
+              number: 80
+  - host: jp.whatsappclone.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: whatsapp-clone-web-service
+            port:
+              number: 80

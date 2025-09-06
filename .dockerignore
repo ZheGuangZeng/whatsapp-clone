@@ -1,0 +1,48 @@
+# Ignore build outputs
+build/
+.dart_tool/
+.packages
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.iml
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore logs
+*.log
+
+# Ignore environment files
+.env*
+!.env.example
+
+# Ignore test files
+test/
+integration_test/
+
+# Ignore Git
+.git/
+.gitignore
+
+# Ignore documentation
+*.md
+docs/
+
+# Ignore temporary files
+*.tmp
+*.temp
+
+# Ignore platform specific build folders
+android/
+ios/
+linux/
+macos/
+windows/
+web/index.html.bak
+
+# Keep necessary docker files
+!Dockerfile
+!infrastructure/
