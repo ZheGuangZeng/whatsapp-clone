@@ -69,3 +69,13 @@ class ProcessingFailure extends Failure {
 class NotImplementedFailure extends Failure {
   const NotImplementedFailure(String message) : super(message: message);
 }
+
+/// Service-related failures (external services)
+class ServiceFailure extends Failure {
+  const ServiceFailure(String message) : super(message: message);
+}
+
+/// Conflict-related failures (resource conflicts)
+class ConflictFailure extends Failure {
+  const ConflictFailure(String message) : super(message: message);
+}
