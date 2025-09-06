@@ -5,7 +5,7 @@ import 'base_usecase.dart';
 
 /// Use case for getting the current authentication session
 class GetCurrentSessionUseCase extends NoParamsUseCase<AuthSession?> {
-  const GetCurrentSessionUseCase(this._repository);
+  GetCurrentSessionUseCase(this._repository);
 
   final IAuthRepository _repository;
 
