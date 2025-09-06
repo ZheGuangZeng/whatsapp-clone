@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:whatsapp_clone/main.dart';
+import 'package:whatsapp_clone/app/pages/splash_page.dart';
 
 void main() {
   group('WhatsApp Clone App', () {
@@ -15,7 +16,7 @@ void main() {
 
       // Verify that splash screen elements are present
       expect(find.text('WhatsApp Clone'), findsOneWidget);
-      expect(find.byIcon(Icons.chat), findsOneWidget);
+      expect(find.byIcon(Icons.chat_bubble), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
@@ -34,23 +35,28 @@ void main() {
     });
   });
   
-  group('Splash Screen', () {
+  group('Splash Page', () {
     testWidgets('displays all required elements', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: SplashScreen(),
+        const ProviderScope(
+          child: MaterialApp(
+            home: SplashPage(),
+          ),
         ),
       );
 
       expect(find.text('WhatsApp Clone'), findsOneWidget);
-      expect(find.byIcon(Icons.chat), findsOneWidget);
+      expect(find.text('Connect • Chat • Meet'), findsOneWidget);
+      expect(find.byIcon(Icons.chat_bubble), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
     testWidgets('has correct background color', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: SplashScreen(),
+        const ProviderScope(
+          child: MaterialApp(
+            home: SplashPage(),
+          ),
         ),
       );
 

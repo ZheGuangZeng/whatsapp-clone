@@ -4,7 +4,7 @@ import 'base_usecase.dart';
 
 /// Use case for user logout
 class LogoutUseCase extends NoParamsUseCase<void> {
-  const LogoutUseCase(this._repository);
+  LogoutUseCase(this._repository);
 
   final IAuthRepository _repository;
 

@@ -1,7 +1,40 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 /// Environment-specific application configuration
 /// Supports development, staging, and production environments
 class AppConfig {
   AppConfig._();
+  
+  /// Initialize configuration (load .env file)
+  static Future<void> initialize() async {
+    try {
+      await dotenv.load(fileName: '.env');
+    } catch (e) {
+      // .env file not found or can't be loaded, fall back to compile-time constants
+      print('Warning: Could not load .env file: $e');
+    }
+  }
+  
+  /// Get environment variable with fallback to compile-time constant
+  static String _getEnvVar(String key, String defaultValue) {
+    return dotenv.env[key] ?? defaultValue;
+  }
+  
+  static bool _getBoolEnvVar(String key, bool defaultValue) {
+    final value = dotenv.env[key];
+    if (value != null) {
+      return value.toLowerCase() == 'true';
+    }
+    return defaultValue;
+  }
+  
+  static int _getIntEnvVar(String key, int defaultValue) {
+    final value = dotenv.env[key];
+    if (value != null) {
+      return int.tryParse(value) ?? defaultValue;
+    }
+    return defaultValue;
+  }
 
   /// Environment detection
   static const String _environment = String.fromEnvironment('ENVIRONMENT', defaultValue: 'development');
@@ -16,14 +49,14 @@ class AppConfig {
   static String get environment => _environment;
 
   /// Supabase Configuration
-  static const String supabaseUrl = String.fromEnvironment(
+  static String get supabaseUrl => _getEnvVar(
     'SUPABASE_URL',
-    defaultValue: 'https://your-project.supabase.co',
+    'https://your-project.supabase.co',
   );
   
-  static const String supabaseAnonKey = String.fromEnvironment(
+  static String get supabaseAnonKey => _getEnvVar(
     'SUPABASE_ANON_KEY', 
-    defaultValue: 'your-anon-key',
+    'your-anon-key',
   );
 
   /// LiveKit Configuration

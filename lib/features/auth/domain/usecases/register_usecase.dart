@@ -8,7 +8,7 @@ import 'base_usecase.dart';
 
 /// Use case for user registration with email or phone
 class RegisterUseCase extends UseCase<AuthSession, RegisterParams> {
-  const RegisterUseCase(this._repository);
+  RegisterUseCase(this._repository);
 
   final IAuthRepository _repository;
 

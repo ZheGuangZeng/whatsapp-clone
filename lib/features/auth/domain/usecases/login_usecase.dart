@@ -8,7 +8,7 @@ import 'base_usecase.dart';
 
 /// Use case for user login with email or phone
 class LoginUseCase extends UseCase<AuthSession, LoginParams> {
-  const LoginUseCase(this._repository);
+  LoginUseCase(this._repository);
 
   final IAuthRepository _repository;
 

@@ -59,8 +59,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) {
               final extra = state.extra as Map<String, dynamic>?;
               return VerificationPage(
-                email: extra?['email'],
-                phone: extra?['phone'],
+                email: extra?['email'] as String?,
+                phone: extra?['phone'] as String?,
               );
             },
           ),

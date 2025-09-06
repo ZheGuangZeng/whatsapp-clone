@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:livekit_client/livekit_client.dart';
+// Removed unused livekit import
 
 /// Meeting lobby page with preview and settings
 class MeetingLobbyPage extends ConsumerStatefulWidget {
@@ -55,7 +55,7 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
                 color: Colors.grey[900],
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFF25D366).withOpacity(0.3),
+                  color: const Color(0xFF25D366).withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -223,8 +223,8 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.blue.withOpacity(0.3),
-            Colors.green.withOpacity(0.3),
+            Colors.blue.withValues(alpha: 0.3),
+            Colors.green.withValues(alpha: 0.3),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
@@ -265,7 +265,7 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(
@@ -292,7 +292,7 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: isEnabled ? Colors.white.withOpacity(0.2) : Colors.red.withOpacity(0.8),
+            color: isEnabled ? Colors.white.withValues(alpha: 0.2) : Colors.red.withValues(alpha: 0.8),
             shape: BoxShape.circle,
           ),
           child: IconButton(
@@ -317,7 +317,7 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
   }
 
   void _showMeetingSettings() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.grey[900],
       builder: (context) => Container(
@@ -379,7 +379,7 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
     
     try {
       // TODO: Implement actual meeting join with LiveKit
-      await Future.delayed(const Duration(seconds: 2));
+      await Future<void>.delayed(const Duration(seconds: 2));
       
       if (mounted) {
         context.pushReplacement('/meeting/room/${widget.meetingId}');

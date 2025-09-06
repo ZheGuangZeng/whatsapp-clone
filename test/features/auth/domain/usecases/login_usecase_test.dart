@@ -15,16 +15,16 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(
-      const AuthSession(
+      AuthSession(
         accessToken: 'token',
         refreshToken: 'refresh',
         user: User(
           id: '1',
           email: 'test@example.com',
           displayName: 'Test',
-          createdAt: DateTime(2023, 1, 1),
+          createdAt: DateTime.utc(2023, 1, 1),
         ),
-        expiresAt: DateTime(2023, 12, 31),
+        expiresAt: DateTime.utc(2023, 12, 31),
         tokenType: 'Bearer',
       ),
     );
@@ -40,14 +40,14 @@ void main() {
       id: '123',
       email: 'test@example.com',
       displayName: 'Test User',
-      createdAt: DateTime(2023, 1, 1),
+      createdAt: DateTime.utc(2023, 1, 1),
     );
 
     final testSession = AuthSession(
       accessToken: 'test_access_token',
       refreshToken: 'test_refresh_token',
       user: testUser,
-      expiresAt: DateTime(2023, 12, 31),
+      expiresAt: DateTime.utc(2023, 12, 31),
       tokenType: 'Bearer',
     );
 
