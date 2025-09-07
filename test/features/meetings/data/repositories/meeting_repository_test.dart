@@ -3,15 +3,11 @@ import 'package:whatsapp_clone/core/errors/failures.dart';
 import 'package:whatsapp_clone/core/utils/result.dart';
 import 'package:whatsapp_clone/features/meetings/data/models/meeting_model.dart';
 import 'package:whatsapp_clone/features/meetings/data/models/meeting_settings_model.dart';
-import 'package:whatsapp_clone/features/meetings/data/repositories/meeting_repository.dart';
-import 'package:whatsapp_clone/features/meetings/domain/entities/meeting_settings.dart';
 import 'package:whatsapp_clone/features/meetings/domain/entities/meeting_state.dart';
 import 'package:whatsapp_clone/features/meetings/domain/repositories/i_meeting_repository.dart';
 
 void main() {
   group('MeetingRepository', () {
-    late MeetingRepository repository;
-
     setUp(() {
       // Create simple test repository
       // Integration tests will test with real datasources
@@ -22,11 +18,6 @@ void main() {
         // This is a basic unit test to verify Result pattern usage
         // Integration tests will verify actual functionality
         
-        const params = CreateMeetingParams(
-          title: 'Test Meeting',
-          hostId: 'host123',
-          settings: MeetingSettings(),
-        );
 
         // Test the result pattern structure
         const result = Success<String>('test');
