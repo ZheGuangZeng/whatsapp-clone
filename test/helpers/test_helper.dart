@@ -1,4 +1,3 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -14,9 +13,9 @@ class TestHelper {
   /// Sets up common test dependencies
   static void setUpTestDependencies() {
     // Register fallback values for mocks
-    registerFallbackValue(AuthException('Test exception'));
-    registerFallbackValue(PostgrestException(message: 'Test exception', details: 'Test details'));
-    registerFallbackValue(StorageException('Test exception'));
+    registerFallbackValue(const AuthException('Test exception'));
+    registerFallbackValue(const PostgrestException(message: 'Test exception', details: 'Test details'));
+    registerFallbackValue(const StorageException('Test exception'));
   }
 
   /// Creates a mock Supabase client

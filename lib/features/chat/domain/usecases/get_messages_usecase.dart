@@ -1,32 +1,48 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../../core/errors/failures.dart' as failures;
+import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/result.dart';
 import '../../../auth/domain/usecases/base_usecase.dart';
-import '../entities/message.dart';
+import '../entities/chat_message.dart';
 import '../repositories/i_chat_repository.dart';
 
-/// Use case for getting messages from a room
-class GetMessagesUseCase implements UseCase<List<Message>, GetMessagesParams> {
-  GetMessagesUseCase(this._chatRepository);
+/// Use case for getting messages from a chat room
+class GetMessagesUseCase implements UseCase<List<ChatMessage>, GetMessagesParams> {
+  const GetMessagesUseCase(this._chatRepository);
 
   final IChatRepository _chatRepository;
 
-  @override
-  Future<Result<List<Message>>> call(GetMessagesParams params) async {
-    try {
-      final messages = await _chatRepository.getMessages(
-        params.roomId,
-        limit: params.limit,
-        before: params.before,
-      );
+  /// Maximum allowed limit for messages per request
+  static const int maxLimit = 100;
 
-      return Success(messages);
-    } catch (e) {
+  @override
+  Future<Result<List<ChatMessage>>> call(GetMessagesParams params) async {
+    // Validate input parameters
+    if (params.roomId.trim().isEmpty) {
       return const ResultFailure(
-        failures.ServerFailure('Failed to get messages'),
+        ValidationFailure(message: 'Room ID cannot be empty'),
       );
     }
+
+    if (params.limit <= 0) {
+      return const ResultFailure(
+        ValidationFailure(message: 'Limit must be positive'),
+      );
+    }
+
+    if (params.limit > maxLimit) {
+      return ResultFailure(
+        ValidationFailure(message: 'Limit cannot exceed $maxLimit'),
+      );
+    }
+
+    // Get messages through repository
+    return await _chatRepository.getMessages(
+      roomId: params.roomId,
+      limit: params.limit,
+      beforeMessageId: params.beforeMessageId,
+      threadId: params.threadId,
+    );
   }
 }
 
@@ -35,18 +51,27 @@ class GetMessagesParams extends Equatable {
   const GetMessagesParams({
     required this.roomId,
     this.limit = 50,
-    this.before,
+    this.beforeMessageId,
+    this.threadId,
   });
 
   /// ID of the room to get messages from
   final String roomId;
-
-  /// Maximum number of messages to retrieve
+  
+  /// Maximum number of messages to return
   final int limit;
-
-  /// Message ID to paginate before (for older messages)
-  final String? before;
+  
+  /// ID of the message to get messages before (for pagination)
+  final String? beforeMessageId;
+  
+  /// ID of the thread to get messages from (if getting thread messages)
+  final String? threadId;
 
   @override
-  List<Object?> get props => [roomId, limit, before];
+  List<Object?> get props => [
+    roomId,
+    limit,
+    beforeMessageId,
+    threadId,
+  ];
 }

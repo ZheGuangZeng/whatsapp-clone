@@ -1,207 +1,132 @@
 import 'package:equatable/equatable.dart';
-
 import 'meeting_participant.dart';
-import 'meeting_recording.dart';
+import 'meeting_settings.dart';
+import 'meeting_state.dart';
 
-/// Enum for meeting status
-enum MeetingStatus {
-  scheduled('scheduled'),
-  active('active'),
-  ended('ended'),
-  cancelled('cancelled');
-
-  const MeetingStatus(this.value);
-  final String value;
-
-  static MeetingStatus fromString(String value) {
-    return MeetingStatus.values.firstWhere(
-      (status) => status.value == value,
-      orElse: () => MeetingStatus.scheduled,
-    );
-  }
-}
-
-/// Domain entity representing a video/audio meeting
+/// Domain entity representing a meeting
 class Meeting extends Equatable {
   const Meeting({
     required this.id,
-    this.roomId,
-    required this.livekitRoomName,
-    required this.hostId,
-    this.title,
+    required this.title,
     this.description,
-    this.scheduledFor,
-    this.startedAt,
-    this.endedAt,
-    this.recordingUrl,
-    this.maxParticipants = 100,
-    this.metadata = const {},
+    required this.hostId,
+    required this.roomId,
     required this.createdAt,
-    required this.updatedAt,
-    this.participants = const [],
-    this.recordings = const [],
+    this.scheduledStartTime,
+    this.actualStartTime,
+    this.actualEndTime,
+    required this.state,
+    required this.settings,
+    required this.participants,
   });
 
   /// Unique identifier for the meeting
   final String id;
-
-  /// Associated chat room ID (optional for standalone meetings)
-  final String? roomId;
-
-  /// LiveKit room name for WebRTC connection
-  final String livekitRoomName;
-
-  /// ID of the user who created/hosts this meeting
-  final String hostId;
-
-  /// Human-readable title of the meeting
-  final String? title;
-
+  
+  /// Title of the meeting
+  final String title;
+  
   /// Optional description of the meeting
   final String? description;
-
-  /// When the meeting is scheduled to start
-  final DateTime? scheduledFor;
-
-  /// When the meeting actually started
-  final DateTime? startedAt;
-
-  /// When the meeting ended
-  final DateTime? endedAt;
-
-  /// URL to the recording (deprecated - use recordings list)
-  final String? recordingUrl;
-
-  /// Maximum number of participants allowed
-  final int maxParticipants;
-
-  /// Additional metadata as JSON
-  final Map<String, dynamic> metadata;
-
+  
+  /// ID of the user who is hosting the meeting
+  final String hostId;
+  
+  /// ID of the room/channel where the meeting takes place
+  final String roomId;
+  
   /// When the meeting was created
   final DateTime createdAt;
-
-  /// When the meeting was last updated
-  final DateTime updatedAt;
-
-  /// List of participants in this meeting
+  
+  /// When the meeting is scheduled to start (optional for instant meetings)
+  final DateTime? scheduledStartTime;
+  
+  /// When the meeting actually started
+  final DateTime? actualStartTime;
+  
+  /// When the meeting actually ended
+  final DateTime? actualEndTime;
+  
+  /// Current state of the meeting
+  final MeetingState state;
+  
+  /// Meeting configuration settings
+  final MeetingSettings settings;
+  
+  /// List of participants in the meeting
   final List<MeetingParticipant> participants;
 
-  /// List of recordings for this meeting
-  final List<MeetingRecording> recordings;
-
-  /// Current status of the meeting
-  MeetingStatus get status {
-    if (endedAt != null) return MeetingStatus.ended;
-    if (startedAt != null) return MeetingStatus.active;
-    if (scheduledFor != null && scheduledFor!.isAfter(DateTime.now())) {
-      return MeetingStatus.scheduled;
+  /// Returns true if the meeting is currently active
+  bool get isActive => state.isActive;
+  
+  /// Returns true if the meeting has ended
+  bool get isEnded => state.isEnded;
+  
+  /// Returns true if the meeting is scheduled
+  bool get isScheduled => state.isScheduled;
+  
+  /// Returns the number of participants in the meeting
+  int get participantCount => participants.length;
+  
+  /// Returns the host participant if they are in the meeting
+  MeetingParticipant? get hostParticipant {
+    try {
+      return participants.firstWhere((p) => p.userId == hostId);
+    } catch (e) {
+      return null;
     }
-    return MeetingStatus.scheduled;
   }
-
-  /// Whether the meeting is currently active
-  bool get isActive => status == MeetingStatus.active;
-
-  /// Whether the meeting has ended
-  bool get hasEnded => status == MeetingStatus.ended;
-
-  /// Whether the meeting is scheduled for the future
-  bool get isScheduled => status == MeetingStatus.scheduled;
-
-  /// Duration of the meeting in minutes (if ended)
-  int? get durationMinutes {
-    if (startedAt == null || endedAt == null) return null;
-    return endedAt!.difference(startedAt!).inMinutes;
-  }
-
-  /// Number of currently active participants
-  int get activeParticipantsCount => participants.where((p) => p.isActive).length;
-
-  /// Whether the meeting has reached max capacity
-  bool get isAtCapacity => activeParticipantsCount >= maxParticipants;
-
-  /// Active participants (currently in the meeting)
-  List<MeetingParticipant> get activeParticipants =>
-      participants.where((p) => p.isActive).toList();
-
-  /// Host participant
-  MeetingParticipant? get hostParticipant =>
-      participants.where((p) => p.role == ParticipantRole.host).firstOrNull;
-
-  /// Admin participants
-  List<MeetingParticipant> get adminParticipants =>
-      participants.where((p) => p.role == ParticipantRole.admin).toList();
-
-  /// Whether the meeting has any recordings
-  bool get hasRecordings => recordings.isNotEmpty;
-
-  /// Completed recordings
-  List<MeetingRecording> get completedRecordings =>
-      recordings.where((r) => r.isCompleted).toList();
-
-  /// Display title with fallback
-  String get displayTitle {
-    if (title != null && title!.isNotEmpty) return title!;
-    return 'Meeting ${createdAt.day}/${createdAt.month}/${createdAt.year}';
+  
+  /// Returns the duration of the meeting if it has ended
+  Duration? get duration {
+    if (actualStartTime == null || actualEndTime == null) return null;
+    return actualEndTime!.difference(actualStartTime!);
   }
 
   @override
   List<Object?> get props => [
         id,
-        roomId,
-        livekitRoomName,
-        hostId,
         title,
         description,
-        scheduledFor,
-        startedAt,
-        endedAt,
-        recordingUrl,
-        maxParticipants,
-        metadata,
+        hostId,
+        roomId,
         createdAt,
-        updatedAt,
+        scheduledStartTime,
+        actualStartTime,
+        actualEndTime,
+        state,
+        settings,
         participants,
-        recordings,
       ];
 
   /// Creates a copy of this meeting with updated fields
   Meeting copyWith({
     String? id,
-    String? roomId,
-    String? livekitRoomName,
-    String? hostId,
     String? title,
     String? description,
-    DateTime? scheduledFor,
-    DateTime? startedAt,
-    DateTime? endedAt,
-    String? recordingUrl,
-    int? maxParticipants,
-    Map<String, dynamic>? metadata,
+    String? hostId,
+    String? roomId,
     DateTime? createdAt,
-    DateTime? updatedAt,
+    DateTime? scheduledStartTime,
+    DateTime? actualStartTime,
+    DateTime? actualEndTime,
+    MeetingState? state,
+    MeetingSettings? settings,
     List<MeetingParticipant>? participants,
-    List<MeetingRecording>? recordings,
   }) {
     return Meeting(
       id: id ?? this.id,
-      roomId: roomId ?? this.roomId,
-      livekitRoomName: livekitRoomName ?? this.livekitRoomName,
-      hostId: hostId ?? this.hostId,
       title: title ?? this.title,
       description: description ?? this.description,
-      scheduledFor: scheduledFor ?? this.scheduledFor,
-      startedAt: startedAt ?? this.startedAt,
-      endedAt: endedAt ?? this.endedAt,
-      recordingUrl: recordingUrl ?? this.recordingUrl,
-      maxParticipants: maxParticipants ?? this.maxParticipants,
-      metadata: metadata ?? this.metadata,
+      hostId: hostId ?? this.hostId,
+      roomId: roomId ?? this.roomId,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      scheduledStartTime: scheduledStartTime ?? this.scheduledStartTime,
+      actualStartTime: actualStartTime ?? this.actualStartTime,
+      actualEndTime: actualEndTime ?? this.actualEndTime,
+      state: state ?? this.state,
+      settings: settings ?? this.settings,
       participants: participants ?? this.participants,
-      recordings: recordings ?? this.recordings,
     );
   }
 }

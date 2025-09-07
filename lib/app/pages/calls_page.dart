@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/meetings/presentation/widgets/meeting_controls.dart';
-import '../../features/meetings/domain/entities/meeting.dart';
+// Removed unused imports
 
 /// Calls and meetings history page
 class CallsPage extends ConsumerWidget {
@@ -146,7 +145,7 @@ class CallsPage extends ConsumerWidget {
   Widget _buildCallHistoryItem(BuildContext context, CallHistoryItem call) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: _getCallStatusColor(call.status).withOpacity(0.1),
+        backgroundColor: _getCallStatusColor(call.status).withValues(alpha: 0.1),
         child: Icon(
           call.isVideoCall ? Icons.videocam : Icons.call,
           color: _getCallStatusColor(call.status),
@@ -256,7 +255,7 @@ class CallsPage extends ConsumerWidget {
   }
 
   void _showClearHistoryDialog(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear Call History'),
@@ -282,7 +281,7 @@ class CallsPage extends ConsumerWidget {
   }
 
   void _showNewCallOptions(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       builder: (context) => Container(
         padding: const EdgeInsets.all(16),
@@ -342,7 +341,7 @@ class CallsPage extends ConsumerWidget {
   void _showJoinMeetingDialog(BuildContext context) {
     final controller = TextEditingController();
     
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Join Meeting'),

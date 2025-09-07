@@ -1,154 +1,114 @@
-import 'package:json_annotation/json_annotation.dart';
-
 import '../../domain/entities/participant.dart';
+import '../../domain/entities/participant_role.dart';
 
-part 'participant_model.g.dart';
-
-/// Data model for Participant entity with JSON serialization
-@JsonSerializable()
+/// Data model for Participant with JSON serialization
 class ParticipantModel extends Participant {
   const ParticipantModel({
     required super.id,
-    required super.roomId,
     required super.userId,
-    required super.displayName,
-    super.email,
-    super.avatarUrl,
-    super.role,
+    required super.roomId,
     required super.joinedAt,
-    super.leftAt,
-    super.isActive,
-    super.isOnline,
-    super.lastSeen,
+    super.role = ParticipantRole.member,
+    super.isActive = true,
+    super.lastActivity,
+    super.permissions = const [],
   });
 
-  /// Creates ParticipantModel from JSON
-  factory ParticipantModel.fromJson(Map<String, dynamic> json) =>
-      _$ParticipantModelFromJson(json);
+  /// Create ParticipantModel from JSON data
+  factory ParticipantModel.fromJson(Map<String, dynamic> json) {
+    if (json['id'] == null) {
+      throw Exception('Participant ID is required');
+    }
+    if (json['user_id'] == null) {
+      throw Exception('User ID is required');
+    }
+    if (json['room_id'] == null) {
+      throw Exception('Room ID is required');
+    }
+    if (json['joined_at'] == null) {
+      throw Exception('Joined at is required');
+    }
 
-  /// Creates ParticipantModel from domain entity
-  factory ParticipantModel.fromEntity(Participant participant) =>
-      ParticipantModel(
-        id: participant.id,
-        roomId: participant.roomId,
-        userId: participant.userId,
-        displayName: participant.displayName,
-        email: participant.email,
-        avatarUrl: participant.avatarUrl,
-        role: participant.role,
-        joinedAt: participant.joinedAt,
-        leftAt: participant.leftAt,
-        isActive: participant.isActive,
-        isOnline: participant.isOnline,
-        lastSeen: participant.lastSeen,
-      );
-
-  /// Creates ParticipantModel from Supabase response
-  factory ParticipantModel.fromSupabase(Map<String, dynamic> data) =>
-      ParticipantModel(
-        id: data['id'] as String,
-        roomId: data['room_id'] as String,
-        userId: data['user_id'] as String,
-        displayName: data['display_name'] as String? ?? 'Unknown User',
-        email: data['email'] as String?,
-        avatarUrl: data['avatar_url'] as String?,
-        role: ParticipantRole.fromString(data['role'] as String? ?? 'member'),
-        joinedAt: DateTime.parse(data['joined_at'] as String),
-        leftAt: data['left_at'] != null
-            ? DateTime.parse(data['left_at'] as String)
-            : null,
-        isActive: data['is_active'] as bool? ?? true,
-        isOnline: data['is_online'] as bool? ?? false,
-        lastSeen: data['last_seen'] != null
-            ? DateTime.parse(data['last_seen'] as String)
-            : null,
-      );
-
-  /// Creates ParticipantModel from joined Supabase query with user data
-  factory ParticipantModel.fromSupabaseWithUser(Map<String, dynamic> data) =>
-      ParticipantModel(
-        id: data['id'] as String,
-        roomId: data['room_id'] as String,
-        userId: data['user_id'] as String,
-        displayName: data['users']?['display_name'] as String? ?? 
-                    data['users']?['email'] as String? ?? 
-                    'Unknown User',
-        email: data['users']?['email'] as String?,
-        avatarUrl: data['users']?['avatar_url'] as String?,
-        role: ParticipantRole.fromString(data['role'] as String? ?? 'member'),
-        joinedAt: DateTime.parse(data['joined_at'] as String),
-        leftAt: data['left_at'] != null
-            ? DateTime.parse(data['left_at'] as String)
-            : null,
-        isActive: data['is_active'] as bool? ?? true,
-        isOnline: data['user_presence']?['is_online'] as bool? ?? false,
-        lastSeen: data['user_presence']?['last_seen'] != null
-            ? DateTime.parse(data['user_presence']['last_seen'] as String)
-            : null,
-      );
-
-  /// Converts to JSON
-  Map<String, dynamic> toJson() => _$ParticipantModelToJson(this);
-
-  /// Converts to Supabase insert format
-  Map<String, dynamic> toSupabaseInsert() => {
-        'room_id': roomId,
-        'user_id': userId,
-        'role': role.value,
-      };
-
-  /// Converts to Supabase update format
-  Map<String, dynamic> toSupabaseUpdate() => {
-        'role': role.value,
-        'is_active': isActive,
-        if (leftAt != null) 'left_at': leftAt!.toIso8601String(),
-      };
-
-  /// Converts to domain entity
-  Participant toEntity() => Participant(
-        id: id,
-        roomId: roomId,
-        userId: userId,
-        displayName: displayName,
-        email: email,
-        avatarUrl: avatarUrl,
-        role: role,
-        joinedAt: joinedAt,
-        leftAt: leftAt,
-        isActive: isActive,
-        isOnline: isOnline,
-        lastSeen: lastSeen,
-      );
-
-  /// Create a copy with updated fields
-  @override
-  ParticipantModel copyWith({
-    String? id,
-    String? roomId,
-    String? userId,
-    String? displayName,
-    String? email,
-    String? avatarUrl,
-    ParticipantRole? role,
-    DateTime? joinedAt,
-    DateTime? leftAt,
-    bool? isActive,
-    bool? isOnline,
-    DateTime? lastSeen,
-  }) {
     return ParticipantModel(
-      id: id ?? this.id,
-      roomId: roomId ?? this.roomId,
-      userId: userId ?? this.userId,
-      displayName: displayName ?? this.displayName,
-      email: email ?? this.email,
-      avatarUrl: avatarUrl ?? this.avatarUrl,
-      role: role ?? this.role,
-      joinedAt: joinedAt ?? this.joinedAt,
-      leftAt: leftAt ?? this.leftAt,
-      isActive: isActive ?? this.isActive,
-      isOnline: isOnline ?? this.isOnline,
-      lastSeen: lastSeen ?? this.lastSeen,
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      roomId: json['room_id'] as String,
+      joinedAt: DateTime.parse(json['joined_at'] as String),
+      role: _parseParticipantRole(json['role'] as String?),
+      isActive: json['is_active'] as bool? ?? true,
+      lastActivity: json['last_activity'] != null 
+        ? DateTime.parse(json['last_activity'] as String)
+        : null,
+      permissions: _parsePermissions(json['permissions']),
     );
+  }
+
+  /// Convert ParticipantModel to JSON data
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'room_id': roomId,
+      'joined_at': joinedAt.toIso8601String(),
+      'role': role.name,
+      'is_active': isActive,
+      'last_activity': lastActivity?.toIso8601String(),
+      'permissions': permissions,
+    };
+  }
+
+  /// Create ParticipantModel from Participant entity
+  factory ParticipantModel.fromEntity(Participant entity) {
+    return ParticipantModel(
+      id: entity.id,
+      userId: entity.userId,
+      roomId: entity.roomId,
+      joinedAt: entity.joinedAt,
+      role: entity.role,
+      isActive: entity.isActive,
+      lastActivity: entity.lastActivity,
+      permissions: entity.permissions,
+    );
+  }
+
+  /// Convert ParticipantModel to Participant entity
+  Participant toEntity() {
+    return Participant(
+      id: id,
+      userId: userId,
+      roomId: roomId,
+      joinedAt: joinedAt,
+      role: role,
+      isActive: isActive,
+      lastActivity: lastActivity,
+      permissions: permissions,
+    );
+  }
+
+  /// Helper method to parse participant role from string
+  static ParticipantRole _parseParticipantRole(String? role) {
+    switch (role) {
+      case 'member':
+        return ParticipantRole.member;
+      case 'moderator':
+        return ParticipantRole.moderator;
+      case 'admin':
+        return ParticipantRole.admin;
+      default:
+        return ParticipantRole.member;
+    }
+  }
+
+  /// Helper method to parse permissions list
+  static List<String> _parsePermissions(dynamic permissions) {
+    if (permissions == null) {
+      return const <String>[];
+    }
+    
+    if (permissions is List) {
+      return permissions.cast<String>();
+    }
+    
+    return const <String>[];
   }
 }

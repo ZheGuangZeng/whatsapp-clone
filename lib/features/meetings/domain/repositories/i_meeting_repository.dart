@@ -1,141 +1,84 @@
-import '../../../core/utils/result.dart';
+import '../../../../core/utils/result.dart';
 import '../entities/meeting.dart';
-import '../entities/meeting_participant.dart';
-import '../entities/meeting_recording.dart';
+import '../entities/meeting_settings.dart';
 
 /// Abstract repository interface for meeting operations
 abstract class IMeetingRepository {
-  /// Create a new meeting
-  Future<Result<Meeting>> createMeeting({
-    String? roomId,
-    required String hostId,
-    String? title,
-    String? description,
-    DateTime? scheduledFor,
-    int maxParticipants = 100,
-    Map<String, dynamic> metadata = const {},
-  });
-
-  /// Get a meeting by ID
+  /// Creates a new meeting with the given parameters
+  Future<Result<Meeting>> createMeeting(CreateMeetingParams params);
+  
+  /// Retrieves a meeting by its ID
   Future<Result<Meeting>> getMeeting(String meetingId);
-
-  /// Get meeting by LiveKit room name
-  Future<Result<Meeting>> getMeetingByLivekitRoom(String livekitRoomName);
-
-  /// Update meeting details
-  Future<Result<Meeting>> updateMeeting(String meetingId, {
-    String? title,
-    String? description,
-    DateTime? scheduledFor,
-    DateTime? startedAt,
-    DateTime? endedAt,
-    int? maxParticipants,
-    Map<String, dynamic>? metadata,
-  });
-
-  /// Delete a meeting
+  
+  /// Updates an existing meeting
+  Future<Result<Meeting>> updateMeeting(Meeting meeting);
+  
+  /// Deletes a meeting by its ID
   Future<Result<void>> deleteMeeting(String meetingId);
+  
+  /// Gets all meetings for a user
+  Future<Result<List<Meeting>>> getUserMeetings(String userId);
+  
+  /// Joins a meeting as a participant
+  Future<Result<Meeting>> joinMeeting(JoinMeetingParams params);
+  
+  /// Leaves a meeting
+  Future<Result<Meeting>> leaveMeeting(LeaveMeetingParams params);
+  
+  /// Ends a meeting
+  Future<Result<Meeting>> endMeeting(EndMeetingParams params);
+}
 
-  /// Start a meeting
-  Future<Result<Meeting>> startMeeting(String meetingId);
-
-  /// End a meeting
-  Future<Result<Meeting>> endMeeting(String meetingId);
-
-  /// Get meetings for a user (as host or participant)
-  Future<Result<List<Meeting>>> getUserMeetings(String userId, {
-    int limit = 50,
-    int offset = 0,
+/// Parameters for creating a meeting
+class CreateMeetingParams {
+  const CreateMeetingParams({
+    required this.title,
+    this.description,
+    required this.hostId,
+    this.scheduledStartTime,
+    required this.settings,
   });
 
-  /// Get meetings for a chat room
-  Future<Result<List<Meeting>>> getRoomMeetings(String roomId, {
-    int limit = 50,
-    int offset = 0,
+  final String title;
+  final String? description;
+  final String hostId;
+  final DateTime? scheduledStartTime;
+  final MeetingSettings settings;
+}
+
+/// Parameters for joining a meeting
+class JoinMeetingParams {
+  const JoinMeetingParams({
+    required this.meetingId,
+    required this.userId,
+    required this.displayName,
+    this.password,
   });
 
-  /// Get active meetings for a user
-  Future<Result<List<Meeting>>> getActiveMeetings(String userId);
+  final String meetingId;
+  final String userId;
+  final String displayName;
+  final String? password;
+}
 
-  /// Get scheduled meetings for a user
-  Future<Result<List<Meeting>>> getScheduledMeetings(String userId);
-
-  // Participant operations
-
-  /// Add participant to meeting
-  Future<Result<MeetingParticipant>> addParticipant({
-    required String meetingId,
-    required String userId,
-    ParticipantRole role = ParticipantRole.participant,
-    String? livekitParticipantId,
+/// Parameters for leaving a meeting
+class LeaveMeetingParams {
+  const LeaveMeetingParams({
+    required this.meetingId,
+    required this.userId,
   });
 
-  /// Remove participant from meeting
-  Future<Result<void>> removeParticipant(String meetingId, String userId);
+  final String meetingId;
+  final String userId;
+}
 
-  /// Update participant status
-  Future<Result<MeetingParticipant>> updateParticipant(
-    String meetingId,
-    String userId, {
-    ParticipantRole? role,
-    ConnectionQuality? connectionQuality,
-    bool? isAudioEnabled,
-    bool? isVideoEnabled,
-    bool? isScreenSharing,
-    String? livekitParticipantId,
+/// Parameters for ending a meeting
+class EndMeetingParams {
+  const EndMeetingParams({
+    required this.meetingId,
+    required this.hostId,
   });
 
-  /// Get meeting participants
-  Future<Result<List<MeetingParticipant>>> getMeetingParticipants(String meetingId);
-
-  /// Get active participants for a meeting
-  Future<Result<List<MeetingParticipant>>> getActiveParticipants(String meetingId);
-
-  // Recording operations
-
-  /// Create a meeting recording
-  Future<Result<MeetingRecording>> createRecording({
-    required String meetingId,
-    required String livekitEgressId,
-    Map<String, dynamic> metadata = const {},
-  });
-
-  /// Update recording status
-  Future<Result<MeetingRecording>> updateRecording(String recordingId, {
-    String? fileUrl,
-    int? fileSize,
-    int? durationSeconds,
-    RecordingStatus? status,
-    DateTime? completedAt,
-  });
-
-  /// Get meeting recordings
-  Future<Result<List<MeetingRecording>>> getMeetingRecordings(String meetingId);
-
-  /// Delete recording
-  Future<Result<void>> deleteRecording(String recordingId);
-
-  // Real-time operations
-
-  /// Watch meeting changes (stream)
-  Stream<Result<Meeting>> watchMeeting(String meetingId);
-
-  /// Watch participant changes for a meeting (stream)
-  Stream<Result<List<MeetingParticipant>>> watchMeetingParticipants(String meetingId);
-
-  /// Watch user's meetings (stream)
-  Stream<Result<List<Meeting>>> watchUserMeetings(String userId);
-
-  // LiveKit token generation
-
-  /// Generate LiveKit access token for a participant
-  Future<Result<String>> generateLivekitToken({
-    required String meetingId,
-    required String userId,
-    ParticipantRole role = ParticipantRole.participant,
-    Duration? ttl,
-  });
-
-  /// Validate LiveKit room access
-  Future<Result<bool>> validateRoomAccess(String livekitRoomName, String userId);
+  final String meetingId;
+  final String hostId;
 }

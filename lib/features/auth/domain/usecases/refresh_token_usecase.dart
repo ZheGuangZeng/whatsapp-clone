@@ -7,7 +7,7 @@ import 'base_usecase.dart';
 
 /// Use case for refreshing authentication token
 class RefreshTokenUseCase extends UseCase<AuthSession, RefreshTokenParams> {
-  const RefreshTokenUseCase(this._repository);
+  RefreshTokenUseCase(this._repository);
 
   final IAuthRepository _repository;
 

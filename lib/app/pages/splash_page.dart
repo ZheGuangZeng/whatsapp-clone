@@ -56,7 +56,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
     await ref.read(authNotifierProvider.notifier).initialize();
     
     // Add minimum splash duration for smooth UX
-    await Future.delayed(const Duration(milliseconds: 2000));
+    await Future<void>.delayed(const Duration(milliseconds: 2000));
     
     // Navigation will be handled by the router's redirect logic
     if (mounted) {
@@ -102,7 +102,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                         borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -133,7 +133,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                       'Connect • Chat • Meet',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -146,7 +146,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                       child: CircularProgressIndicator(
                         strokeWidth: 3,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.white.withOpacity(0.8),
+                          Colors.white.withValues(alpha: 0.8),
                         ),
                       ),
                     ),

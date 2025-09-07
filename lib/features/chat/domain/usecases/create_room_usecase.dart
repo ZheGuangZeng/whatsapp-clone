@@ -1,87 +1,81 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../../core/errors/failures.dart' as failures;
+import '../../../../core/errors/failures.dart';
 import '../../../../core/utils/result.dart';
 import '../../../auth/domain/usecases/base_usecase.dart';
 import '../entities/room.dart';
-import '../repositories/i_chat_repository.dart';
+import '../entities/room_type.dart';
+import '../repositories/i_room_repository.dart';
 
-/// Use case for creating a new room
+/// Use case for creating a new chat room
 class CreateRoomUseCase implements UseCase<Room, CreateRoomParams> {
-  CreateRoomUseCase(this._chatRepository);
+  const CreateRoomUseCase(this._roomRepository);
 
-  final IChatRepository _chatRepository;
+  final IRoomRepository _roomRepository;
 
   @override
   Future<Result<Room>> call(CreateRoomParams params) async {
-    try {
-      final room = await _chatRepository.createRoom(
-        name: params.name,
-        description: params.description,
-        type: params.type.value,
-        participantIds: params.participantIds,
-      );
-
-      return Success(room);
-    } catch (e) {
+    // Validate input parameters
+    if (params.name.trim().isEmpty) {
       return const ResultFailure(
-        failures.ServerFailure('Failed to create room'),
+        ValidationFailure(message: 'Room name cannot be empty'),
       );
     }
-  }
-}
 
-/// Use case for getting or creating a direct message room
-class GetOrCreateDirectMessageUseCase implements UseCase<Room, GetOrCreateDirectMessageParams> {
-  GetOrCreateDirectMessageUseCase(this._chatRepository);
-
-  final IChatRepository _chatRepository;
-
-  @override
-  Future<Result<Room>> call(GetOrCreateDirectMessageParams params) async {
-    try {
-      final room = await _chatRepository.getOrCreateDirectMessage(params.otherUserId);
-      return Success(room);
-    } catch (e) {
+    if (params.creatorId.trim().isEmpty) {
       return const ResultFailure(
-        failures.ServerFailure('Failed to get or create direct message'),
+        ValidationFailure(message: 'Creator ID cannot be empty'),
       );
     }
+
+    // Create the room through repository
+    return await _roomRepository.createRoom(
+      name: params.name.trim(),
+      creatorId: params.creatorId,
+      type: params.type,
+      description: params.description?.trim(),
+      avatarUrl: params.avatarUrl,
+      initialParticipants: params.initialParticipants,
+    );
   }
 }
 
 /// Parameters for creating a room
 class CreateRoomParams extends Equatable {
   const CreateRoomParams({
-    this.name,
+    required this.name,
+    required this.creatorId,
+    this.type = RoomType.group,
     this.description,
-    required this.type,
-    this.participantIds = const [],
+    this.avatarUrl,
+    this.initialParticipants,
   });
 
-  /// Name of the room (for group chats)
-  final String? name;
-
-  /// Description of the room
-  final String? description;
-
-  /// Type of room (direct or group)
+  /// Name of the room
+  final String name;
+  
+  /// ID of the user creating the room
+  final String creatorId;
+  
+  /// Type of room (group, direct, channel)
   final RoomType type;
-
-  /// List of participant user IDs to add to the room
-  final List<String> participantIds;
-
-  @override
-  List<Object?> get props => [name, description, type, participantIds];
-}
-
-/// Parameters for getting or creating a direct message
-class GetOrCreateDirectMessageParams extends Equatable {
-  const GetOrCreateDirectMessageParams({required this.otherUserId});
-
-  /// ID of the other user for direct message
-  final String otherUserId;
+  
+  /// Optional description for the room
+  final String? description;
+  
+  /// Optional avatar URL for the room
+  final String? avatarUrl;
+  
+  /// List of initial participant user IDs
+  final List<String>? initialParticipants;
 
   @override
-  List<Object?> get props => [otherUserId];
+  List<Object?> get props => [
+    name,
+    creatorId,
+    type,
+    description,
+    avatarUrl,
+    initialParticipants,
+  ];
 }

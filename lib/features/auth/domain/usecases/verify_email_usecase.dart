@@ -7,7 +7,7 @@ import 'base_usecase.dart';
 
 /// Use case for email verification
 class VerifyEmailUseCase extends UseCase<AuthSession, VerifyEmailParams> {
-  const VerifyEmailUseCase(this._repository);
+  VerifyEmailUseCase(this._repository);
 
   final IAuthRepository _repository;
 

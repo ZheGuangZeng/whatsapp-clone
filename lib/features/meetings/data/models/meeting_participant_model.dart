@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import '../../domain/entities/meeting_participant.dart';
+import '../../domain/entities/participant_role.dart';
 
 part 'meeting_participant_model.g.dart';
 
@@ -8,46 +9,38 @@ part 'meeting_participant_model.g.dart';
 @JsonSerializable()
 class MeetingParticipantModel {
   const MeetingParticipantModel({
-    required this.id,
-    required this.meetingId,
     required this.userId,
-    this.livekitParticipantId,
+    required this.displayName,
     required this.role,
     required this.joinedAt,
     this.leftAt,
-    this.connectionQuality = 'good',
-    this.isAudioEnabled = true,
-    this.isVideoEnabled = true,
-    this.isScreenSharing = false,
-    this.metadata = const {},
-    this.displayName,
+    required this.isAudioEnabled,
+    required this.isVideoEnabled,
     this.avatarUrl,
   });
 
-  final String id;
-  @JsonKey(name: 'meeting_id')
-  final String meetingId;
-  @JsonKey(name: 'user_id')
+  /// Unique identifier for the user
   final String userId;
-  @JsonKey(name: 'livekit_participant_id')
-  final String? livekitParticipantId;
-  final String role;
-  @JsonKey(name: 'joined_at')
+  
+  /// Display name of the participant
+  final String displayName;
+  
+  /// Role of the participant in the meeting
+  final ParticipantRole role;
+  
+  /// When the participant joined the meeting
   final DateTime joinedAt;
-  @JsonKey(name: 'left_at')
+  
+  /// When the participant left the meeting (null if still present)
   final DateTime? leftAt;
-  @JsonKey(name: 'connection_quality')
-  final String connectionQuality;
-  @JsonKey(name: 'is_audio_enabled')
+  
+  /// Whether the participant's audio is enabled
   final bool isAudioEnabled;
-  @JsonKey(name: 'is_video_enabled')
+  
+  /// Whether the participant's video is enabled
   final bool isVideoEnabled;
-  @JsonKey(name: 'is_screen_sharing')
-  final bool isScreenSharing;
-  final Map<String, dynamic> metadata;
-  @JsonKey(name: 'display_name')
-  final String? displayName;
-  @JsonKey(name: 'avatar_url')
+  
+  /// URL to participant's avatar image
   final String? avatarUrl;
 
   /// Creates a MeetingParticipantModel from JSON map
@@ -57,22 +50,48 @@ class MeetingParticipantModel {
   /// Converts MeetingParticipantModel to JSON map
   Map<String, dynamic> toJson() => _$MeetingParticipantModelToJson(this);
 
+  /// Creates a MeetingParticipantModel from Supabase participant row
+  factory MeetingParticipantModel.fromSupabaseRow(Map<String, dynamic> row) {
+    return MeetingParticipantModel(
+      userId: row['user_id'] as String,
+      displayName: row['display_name'] as String,
+      role: ParticipantRole.values.firstWhere(
+        (r) => r.name == row['role'],
+      ),
+      joinedAt: DateTime.parse(row['joined_at'] as String),
+      leftAt: row['left_at'] != null 
+          ? DateTime.parse(row['left_at'] as String) 
+          : null,
+      isAudioEnabled: row['is_audio_enabled'] as bool,
+      isVideoEnabled: row['is_video_enabled'] as bool,
+      avatarUrl: row['avatar_url'] as String?,
+    );
+  }
+
+  /// Converts to Supabase row format
+  Map<String, dynamic> toSupabaseRow() {
+    return {
+      'user_id': userId,
+      'display_name': displayName,
+      'role': role.name,
+      'joined_at': joinedAt.toIso8601String(),
+      'left_at': leftAt?.toIso8601String(),
+      'is_audio_enabled': isAudioEnabled,
+      'is_video_enabled': isVideoEnabled,
+      'avatar_url': avatarUrl,
+    };
+  }
+
   /// Creates a MeetingParticipantModel from domain entity
   factory MeetingParticipantModel.fromDomain(MeetingParticipant participant) {
     return MeetingParticipantModel(
-      id: participant.id,
-      meetingId: participant.meetingId,
       userId: participant.userId,
-      livekitParticipantId: participant.livekitParticipantId,
-      role: participant.role.value,
+      displayName: participant.displayName,
+      role: participant.role,
       joinedAt: participant.joinedAt,
       leftAt: participant.leftAt,
-      connectionQuality: participant.connectionQuality.value,
       isAudioEnabled: participant.isAudioEnabled,
       isVideoEnabled: participant.isVideoEnabled,
-      isScreenSharing: participant.isScreenSharing,
-      metadata: participant.metadata,
-      displayName: participant.displayName,
       avatarUrl: participant.avatarUrl,
     );
   }
@@ -80,75 +99,37 @@ class MeetingParticipantModel {
   /// Converts to domain entity
   MeetingParticipant toDomain() {
     return MeetingParticipant(
-      id: id,
-      meetingId: meetingId,
       userId: userId,
-      livekitParticipantId: livekitParticipantId,
-      role: ParticipantRole.fromString(role),
+      displayName: displayName,
+      role: role,
       joinedAt: joinedAt,
       leftAt: leftAt,
-      connectionQuality: ConnectionQuality.fromString(connectionQuality),
       isAudioEnabled: isAudioEnabled,
       isVideoEnabled: isVideoEnabled,
-      isScreenSharing: isScreenSharing,
-      metadata: metadata,
-      displayName: displayName,
       avatarUrl: avatarUrl,
     );
   }
 
-  /// Creates a MeetingParticipantModel from Supabase database row
-  factory MeetingParticipantModel.fromSupabase(Map<String, dynamic> json) {
+  /// Creates a copy of this participant with updated fields
+  MeetingParticipantModel copyWith({
+    String? userId,
+    String? displayName,
+    ParticipantRole? role,
+    DateTime? joinedAt,
+    DateTime? leftAt,
+    bool? isAudioEnabled,
+    bool? isVideoEnabled,
+    String? avatarUrl,
+  }) {
     return MeetingParticipantModel(
-      id: json['id'],
-      meetingId: json['meeting_id'],
-      userId: json['user_id'],
-      livekitParticipantId: json['livekit_participant_id'],
-      role: json['role'],
-      joinedAt: DateTime.parse(json['joined_at']),
-      leftAt: json['left_at'] != null
-          ? DateTime.parse(json['left_at'])
-          : null,
-      connectionQuality: json['connection_quality'] ?? 'good',
-      isAudioEnabled: json['is_audio_enabled'] ?? true,
-      isVideoEnabled: json['is_video_enabled'] ?? true,
-      isScreenSharing: json['is_screen_sharing'] ?? false,
-      metadata: json['metadata'] ?? {},
-      // These fields might come from a joined query with users table
-      displayName: json['display_name'],
-      avatarUrl: json['avatar_url'],
+      userId: userId ?? this.userId,
+      displayName: displayName ?? this.displayName,
+      role: role ?? this.role,
+      joinedAt: joinedAt ?? this.joinedAt,
+      leftAt: leftAt ?? this.leftAt,
+      isAudioEnabled: isAudioEnabled ?? this.isAudioEnabled,
+      isVideoEnabled: isVideoEnabled ?? this.isVideoEnabled,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
     );
-  }
-
-  /// Converts to Supabase insert format
-  Map<String, dynamic> toSupabaseInsert() {
-    return {
-      'meeting_id': meetingId,
-      'user_id': userId,
-      'livekit_participant_id': livekitParticipantId,
-      'role': role,
-      'joined_at': joinedAt.toIso8601String(),
-      'left_at': leftAt?.toIso8601String(),
-      'connection_quality': connectionQuality,
-      'is_audio_enabled': isAudioEnabled,
-      'is_video_enabled': isVideoEnabled,
-      'is_screen_sharing': isScreenSharing,
-      'metadata': metadata,
-    };
-  }
-
-  /// Converts to Supabase update format
-  Map<String, dynamic> toSupabaseUpdate() {
-    return {
-      if (livekitParticipantId != null)
-        'livekit_participant_id': livekitParticipantId,
-      'role': role,
-      if (leftAt != null) 'left_at': leftAt!.toIso8601String(),
-      'connection_quality': connectionQuality,
-      'is_audio_enabled': isAudioEnabled,
-      'is_video_enabled': isVideoEnabled,
-      'is_screen_sharing': isScreenSharing,
-      'metadata': metadata,
-    };
   }
 }

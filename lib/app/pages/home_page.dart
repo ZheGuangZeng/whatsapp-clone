@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/auth/presentation/providers/auth_providers.dart';
-import '../../features/auth/presentation/providers/auth_state.dart';
+// Removed unused auth imports
 
 /// Main app shell with bottom navigation
 class HomePage extends ConsumerWidget {

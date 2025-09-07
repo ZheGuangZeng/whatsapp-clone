@@ -2,60 +2,66 @@ import 'package:json_annotation/json_annotation.dart';
 
 import '../../domain/entities/meeting.dart';
 import '../../domain/entities/meeting_participant.dart';
-import '../../domain/entities/meeting_recording.dart';
+import '../../domain/entities/meeting_settings.dart';
+import '../../domain/entities/meeting_state.dart';
 import 'meeting_participant_model.dart';
-import 'meeting_recording_model.dart';
+import 'meeting_settings_model.dart';
 
 part 'meeting_model.g.dart';
 
 /// Data model for Meeting entity with JSON serialization
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class MeetingModel {
   const MeetingModel({
     required this.id,
-    this.roomId,
-    required this.livekitRoomName,
-    required this.hostId,
-    this.title,
+    required this.title,
     this.description,
-    this.scheduledFor,
-    this.startedAt,
-    this.endedAt,
-    this.recordingUrl,
-    this.maxParticipants = 100,
-    this.metadata = const {},
+    required this.hostId,
+    required this.roomId,
     required this.createdAt,
-    required this.updatedAt,
-    this.participants = const [],
-    this.recordings = const [],
+    this.scheduledStartTime,
+    this.actualStartTime,
+    this.actualEndTime,
+    required this.state,
+    required this.settings,
+    required this.participants,
   });
 
+  /// Unique identifier for the meeting
   final String id;
-  @JsonKey(name: 'room_id')
-  final String? roomId;
-  @JsonKey(name: 'livekit_room_name')
-  final String livekitRoomName;
-  @JsonKey(name: 'host_id')
-  final String hostId;
-  final String? title;
+  
+  /// Title of the meeting
+  final String title;
+  
+  /// Optional description of the meeting
   final String? description;
-  @JsonKey(name: 'scheduled_for')
-  final DateTime? scheduledFor;
-  @JsonKey(name: 'started_at')
-  final DateTime? startedAt;
-  @JsonKey(name: 'ended_at')
-  final DateTime? endedAt;
-  @JsonKey(name: 'recording_url')
-  final String? recordingUrl;
-  @JsonKey(name: 'max_participants')
-  final int maxParticipants;
-  final Map<String, dynamic> metadata;
-  @JsonKey(name: 'created_at')
+  
+  /// ID of the user who is hosting the meeting
+  final String hostId;
+  
+  /// ID of the room/channel where the meeting takes place
+  final String roomId;
+  
+  /// When the meeting was created
   final DateTime createdAt;
-  @JsonKey(name: 'updated_at')
-  final DateTime updatedAt;
+  
+  /// When the meeting is scheduled to start (optional for instant meetings)
+  final DateTime? scheduledStartTime;
+  
+  /// When the meeting actually started
+  final DateTime? actualStartTime;
+  
+  /// When the meeting actually ended
+  final DateTime? actualEndTime;
+  
+  /// Current state of the meeting
+  final MeetingState state;
+  
+  /// Meeting configuration settings
+  final MeetingSettingsModel settings;
+  
+  /// List of participants in the meeting
   final List<MeetingParticipantModel> participants;
-  final List<MeetingRecordingModel> recordings;
 
   /// Creates a MeetingModel from JSON map
   factory MeetingModel.fromJson(Map<String, dynamic> json) =>
@@ -64,28 +70,86 @@ class MeetingModel {
   /// Converts MeetingModel to JSON map
   Map<String, dynamic> toJson() => _$MeetingModelToJson(this);
 
+  /// Creates a MeetingModel from Supabase row
+  factory MeetingModel.fromSupabaseRow(
+    Map<String, dynamic> meetingRow,
+    List<Map<String, dynamic>> participantRows,
+  ) {
+    return MeetingModel(
+      id: meetingRow['id'] as String,
+      title: meetingRow['title'] as String,
+      description: meetingRow['description'] as String?,
+      hostId: meetingRow['host_id'] as String,
+      roomId: meetingRow['room_id'] as String,
+      createdAt: DateTime.parse(meetingRow['created_at'] as String),
+      scheduledStartTime: meetingRow['scheduled_start_time'] != null
+          ? DateTime.parse(meetingRow['scheduled_start_time'] as String)
+          : null,
+      actualStartTime: meetingRow['actual_start_time'] != null
+          ? DateTime.parse(meetingRow['actual_start_time'] as String)
+          : null,
+      actualEndTime: meetingRow['actual_end_time'] != null
+          ? DateTime.parse(meetingRow['actual_end_time'] as String)
+          : null,
+      state: MeetingState.values.firstWhere(
+        (s) => s.name == meetingRow['state'],
+      ),
+      settings: MeetingSettingsModel(
+        maxParticipants: meetingRow['max_participants'] as int? ?? 100,
+        isRecordingEnabled: meetingRow['is_recording_enabled'] as bool? ?? false,
+        isWaitingRoomEnabled: meetingRow['is_waiting_room_enabled'] as bool? ?? false,
+        allowScreenShare: meetingRow['allow_screen_share'] as bool? ?? true,
+        allowChat: meetingRow['allow_chat'] as bool? ?? true,
+        isPublic: meetingRow['is_public'] as bool? ?? false,
+        requireApproval: meetingRow['require_approval'] as bool? ?? false,
+        password: meetingRow['password'] as String?,
+      ),
+      participants: participantRows
+          .map((row) => MeetingParticipantModel.fromSupabaseRow(row))
+          .toList(),
+    );
+  }
+
+  /// Converts to Supabase row format
+  Map<String, dynamic> toSupabaseRow() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'host_id': hostId,
+      'room_id': roomId,
+      'created_at': createdAt.toIso8601String(),
+      'scheduled_start_time': scheduledStartTime?.toIso8601String(),
+      'actual_start_time': actualStartTime?.toIso8601String(),
+      'actual_end_time': actualEndTime?.toIso8601String(),
+      'state': state.name,
+      'max_participants': settings.maxParticipants,
+      'is_recording_enabled': settings.isRecordingEnabled,
+      'is_waiting_room_enabled': settings.isWaitingRoomEnabled,
+      'allow_screen_share': settings.allowScreenShare,
+      'allow_chat': settings.allowChat,
+      'is_public': settings.isPublic,
+      'require_approval': settings.requireApproval,
+      'password': settings.password,
+    };
+  }
+
   /// Creates a MeetingModel from domain entity
   factory MeetingModel.fromDomain(Meeting meeting) {
     return MeetingModel(
       id: meeting.id,
-      roomId: meeting.roomId,
-      livekitRoomName: meeting.livekitRoomName,
-      hostId: meeting.hostId,
       title: meeting.title,
       description: meeting.description,
-      scheduledFor: meeting.scheduledFor,
-      startedAt: meeting.startedAt,
-      endedAt: meeting.endedAt,
-      recordingUrl: meeting.recordingUrl,
-      maxParticipants: meeting.maxParticipants,
-      metadata: meeting.metadata,
+      hostId: meeting.hostId,
+      roomId: meeting.roomId,
       createdAt: meeting.createdAt,
-      updatedAt: meeting.updatedAt,
+      scheduledStartTime: meeting.scheduledStartTime,
+      actualStartTime: meeting.actualStartTime,
+      actualEndTime: meeting.actualEndTime,
+      state: meeting.state,
+      settings: MeetingSettingsModel.fromDomain(meeting.settings),
       participants: meeting.participants
           .map((p) => MeetingParticipantModel.fromDomain(p))
-          .toList(),
-      recordings: meeting.recordings
-          .map((r) => MeetingRecordingModel.fromDomain(r))
           .toList(),
     );
   }
@@ -94,89 +158,17 @@ class MeetingModel {
   Meeting toDomain() {
     return Meeting(
       id: id,
-      roomId: roomId,
-      livekitRoomName: livekitRoomName,
-      hostId: hostId,
       title: title,
       description: description,
-      scheduledFor: scheduledFor,
-      startedAt: startedAt,
-      endedAt: endedAt,
-      recordingUrl: recordingUrl,
-      maxParticipants: maxParticipants,
-      metadata: metadata,
+      hostId: hostId,
+      roomId: roomId,
       createdAt: createdAt,
-      updatedAt: updatedAt,
+      scheduledStartTime: scheduledStartTime,
+      actualStartTime: actualStartTime,
+      actualEndTime: actualEndTime,
+      state: state,
+      settings: settings.toDomain(),
       participants: participants.map((p) => p.toDomain()).toList(),
-      recordings: recordings.map((r) => r.toDomain()).toList(),
     );
-  }
-
-  /// Creates a MeetingModel from Supabase database row
-  factory MeetingModel.fromSupabase(Map<String, dynamic> json) {
-    // Handle participants and recordings which might be separate queries
-    final participantsData = json['participants'] as List<dynamic>? ?? [];
-    final recordingsData = json['recordings'] as List<dynamic>? ?? [];
-
-    return MeetingModel(
-      id: json['id'],
-      roomId: json['room_id'],
-      livekitRoomName: json['livekit_room_name'],
-      hostId: json['host_id'],
-      title: json['title'],
-      description: json['description'],
-      scheduledFor: json['scheduled_for'] != null
-          ? DateTime.parse(json['scheduled_for'])
-          : null,
-      startedAt: json['started_at'] != null
-          ? DateTime.parse(json['started_at'])
-          : null,
-      endedAt: json['ended_at'] != null
-          ? DateTime.parse(json['ended_at'])
-          : null,
-      recordingUrl: json['recording_url'],
-      maxParticipants: json['max_participants'] ?? 100,
-      metadata: json['metadata'] ?? {},
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-      participants: participantsData
-          .map((p) => MeetingParticipantModel.fromSupabase(p))
-          .toList(),
-      recordings: recordingsData
-          .map((r) => MeetingRecordingModel.fromSupabase(r))
-          .toList(),
-    );
-  }
-
-  /// Converts to Supabase insert format
-  Map<String, dynamic> toSupabaseInsert() {
-    return {
-      'room_id': roomId,
-      'livekit_room_name': livekitRoomName,
-      'host_id': hostId,
-      'title': title,
-      'description': description,
-      'scheduled_for': scheduledFor?.toIso8601String(),
-      'started_at': startedAt?.toIso8601String(),
-      'ended_at': endedAt?.toIso8601String(),
-      'recording_url': recordingUrl,
-      'max_participants': maxParticipants,
-      'metadata': metadata,
-    };
-  }
-
-  /// Converts to Supabase update format
-  Map<String, dynamic> toSupabaseUpdate() {
-    return {
-      if (title != null) 'title': title,
-      if (description != null) 'description': description,
-      if (scheduledFor != null) 'scheduled_for': scheduledFor!.toIso8601String(),
-      if (startedAt != null) 'started_at': startedAt!.toIso8601String(),
-      if (endedAt != null) 'ended_at': endedAt!.toIso8601String(),
-      if (recordingUrl != null) 'recording_url': recordingUrl,
-      'max_participants': maxParticipants,
-      'metadata': metadata,
-      'updated_at': DateTime.now().toIso8601String(),
-    };
   }
 }

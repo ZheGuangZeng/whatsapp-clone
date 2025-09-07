@@ -1,93 +1,56 @@
-import 'package:equatable/equatable.dart';
-
-import '../../../core/errors/failures.dart';
-import '../../../core/utils/result.dart';
-import '../../auth/domain/usecases/base_usecase.dart';
+import '../../../../core/errors/failures.dart';
+import '../../../../core/utils/result.dart';
 import '../entities/meeting.dart';
 import '../repositories/i_meeting_repository.dart';
 
-/// Use case to create a new meeting
-class CreateMeetingUseCase implements UseCase<Meeting, CreateMeetingParams> {
+/// Use case for creating a new meeting
+class CreateMeetingUseCase {
   const CreateMeetingUseCase(this._repository);
 
   final IMeetingRepository _repository;
 
-  @override
   Future<Result<Meeting>> call(CreateMeetingParams params) async {
-    // Validate parameters
-    if (params.maxParticipants < 2 || params.maxParticipants > 1000) {
-      return const ResultFailure(
-        ValidationFailure('Max participants must be between 2 and 1000'),
-      );
+    // Validate input parameters
+    final validationResult = _validateParams(params);
+    if (validationResult != null) {
+      return ResultFailure(validationResult);
     }
 
-    if (params.scheduledFor != null && 
-        params.scheduledFor!.isBefore(DateTime.now())) {
-      return const ResultFailure(
-        ValidationFailure('Cannot schedule meeting in the past'),
-      );
-    }
-
-    // Create the meeting
-    final createResult = await _repository.createMeeting(
-      roomId: params.roomId,
-      hostId: params.hostId,
-      title: params.title,
-      description: params.description,
-      scheduledFor: params.scheduledFor,
-      maxParticipants: params.maxParticipants,
-      metadata: params.metadata,
-    );
-
-    return await createResult.when(
-      success: (meeting) async {
-        // If the meeting should start immediately
-        if (params.startImmediately) {
-          final startResult = await _repository.startMeeting(meeting.id);
-          return startResult.when(
-            success: (startedMeeting) => Success(startedMeeting),
-            failure: (failure) => ResultFailure(failure),
-          );
-        }
-
-        return Success(meeting);
-      },
-      failure: (failure) async => ResultFailure(failure),
-    );
+    // Delegate to repository
+    return await _repository.createMeeting(params);
   }
-}
 
-/// Parameters for CreateMeetingUseCase
-class CreateMeetingParams extends Equatable {
-  const CreateMeetingParams({
-    this.roomId,
-    required this.hostId,
-    this.title,
-    this.description,
-    this.scheduledFor,
-    this.maxParticipants = 100,
-    this.metadata = const {},
-    this.startImmediately = false,
-  });
+  ValidationFailure? _validateParams(CreateMeetingParams params) {
+    // Title validation
+    if (params.title.trim().isEmpty) {
+      return ValidationFailure(message: 'Title cannot be empty');
+    }
 
-  final String? roomId;
-  final String hostId;
-  final String? title;
-  final String? description;
-  final DateTime? scheduledFor;
-  final int maxParticipants;
-  final Map<String, dynamic> metadata;
-  final bool startImmediately;
+    if (params.title.length > 200) {
+      return ValidationFailure(message: 'Title cannot exceed 200 characters');
+    }
 
-  @override
-  List<Object?> get props => [
-        roomId,
-        hostId,
-        title,
-        description,
-        scheduledFor,
-        maxParticipants,
-        metadata,
-        startImmediately,
-      ];
+    // Host ID validation
+    if (params.hostId.trim().isEmpty) {
+      return ValidationFailure(message: 'Host ID cannot be empty');
+    }
+
+    // Description validation
+    if (params.description != null && params.description!.length > 1000) {
+      return ValidationFailure(message: 'Description cannot exceed 1000 characters');
+    }
+
+    // Scheduled time validation
+    if (params.scheduledStartTime != null && 
+        params.scheduledStartTime!.isBefore(DateTime.now())) {
+      return ValidationFailure(message: 'Meeting scheduled time cannot be in the past');
+    }
+
+    // Settings validation
+    if (params.settings.maxParticipants <= 0) {
+      return ValidationFailure(message: 'Meeting participant limit must be greater than 0');
+    }
+
+    return null; // No validation errors
+  }
 }

@@ -50,7 +50,7 @@ class AuthSessionModel {
     return AuthSessionModel(
       accessToken: session.accessToken,
       refreshToken: session.refreshToken,
-      user: session.user,
+      user: UserModel.fromDomain(session.user),
       expiresAt: session.expiresAt,
       tokenType: session.tokenType,
     );
@@ -61,9 +61,12 @@ class AuthSessionModel {
     return AuthSession(
       accessToken: accessToken,
       refreshToken: refreshToken,
-      user: user,
+      user: user.toDomain(),
       expiresAt: expiresAt,
       tokenType: tokenType,
     );
   }
+
+  /// Checks if the session is expired
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
 }

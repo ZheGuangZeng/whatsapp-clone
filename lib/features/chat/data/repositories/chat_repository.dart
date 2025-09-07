@@ -1,316 +1,259 @@
-import 'dart:async';
-
-import '../../domain/entities/message.dart';
-import '../../domain/entities/participant.dart';
-import '../../domain/entities/room.dart';
-import '../../domain/entities/typing_indicator.dart';
-import '../../domain/entities/user_presence.dart';
+import '../../../../core/errors/failures.dart';
+import '../../../../core/utils/result.dart';
+import '../../../messaging/domain/entities/message.dart';
+import '../../domain/entities/chat_message.dart';
+import '../../domain/entities/message_thread.dart';
 import '../../domain/repositories/i_chat_repository.dart';
-import '../sources/chat_remote_source.dart';
+import '../datasources/chat_local_datasource.dart';
+import '../datasources/chat_remote_datasource.dart';
+import '../models/chat_message_model.dart';
 
-/// Implementation of IChatRepository
+/// Implementation of IChatRepository using remote and local data sources
 class ChatRepository implements IChatRepository {
-  ChatRepository(this._remoteSource);
+  const ChatRepository({
+    required ChatRemoteDataSource remoteDataSource,
+    required ChatLocalDataSource localDataSource,
+  }) : _remoteDataSource = remoteDataSource,
+       _localDataSource = localDataSource;
 
-  final ChatRemoteSource _remoteSource;
-
-  // ========================================
-  // ROOM OPERATIONS
-  // ========================================
-
-  @override
-  Future<List<Room>> getRooms() async {
-    final roomModels = await _remoteSource.getRooms();
-    return roomModels.map((model) => model.toEntity()).toList();
-  }
+  final ChatRemoteDataSource _remoteDataSource;
+  final ChatLocalDataSource _localDataSource;
 
   @override
-  Future<Room?> getRoom(String roomId) async {
-    final roomModel = await _remoteSource.getRoom(roomId);
-    return roomModel?.toEntity();
-  }
-
-  @override
-  Future<Room> createRoom({
-    String? name,
-    String? description,
-    required String type,
-    List<String> participantIds = const [],
-  }) async {
-    final roomModel = await _remoteSource.createRoom(
-      name: name,
-      description: description,
-      type: type,
-      participantIds: participantIds,
-    );
-    return roomModel.toEntity();
-  }
-
-  @override
-  Future<Room> updateRoom(
-    String roomId, {
-    String? name,
-    String? description,
-    String? avatarUrl,
-  }) async {
-    final roomModel = await _remoteSource.updateRoom(
-      roomId,
-      name: name,
-      description: description,
-      avatarUrl: avatarUrl,
-    );
-    return roomModel.toEntity();
-  }
-
-  @override
-  Future<void> deleteRoom(String roomId) async {
-    await _remoteSource.deleteRoom(roomId);
-  }
-
-  @override
-  Future<Room> getOrCreateDirectMessage(String otherUserId) async {
-    final roomModel = await _remoteSource.getOrCreateDirectMessage(otherUserId);
-    return roomModel.toEntity();
-  }
-
-  @override
-  Stream<List<Room>> watchRooms() {
-    return _remoteSource.watchRooms().map((models) =>
-        models.map((model) => model.toEntity()).toList());
-  }
-
-  // ========================================
-  // PARTICIPANT OPERATIONS
-  // ========================================
-
-  @override
-  Future<void> addParticipants(String roomId, List<String> userIds) async {
-    await _remoteSource.addParticipants(roomId, userIds);
-  }
-
-  @override
-  Future<void> removeParticipant(String roomId, String userId) async {
-    await _remoteSource.removeParticipant(roomId, userId);
-  }
-
-  @override
-  Future<void> updateParticipantRole(String roomId, String userId, String role) async {
-    await _remoteSource.updateParticipantRole(roomId, userId, role);
-  }
-
-  @override
-  Future<void> leaveRoom(String roomId) async {
-    // TODO: Get current user ID from auth service
-    // For now, we'll use the same method as removeParticipant
-    throw UnimplementedError('leaveRoom requires current user ID from auth service');
-  }
-
-  @override
-  Future<List<Participant>> getRoomParticipants(String roomId) async {
-    final participantModels = await _remoteSource.getRoomParticipants(roomId);
-    return participantModels.map((model) => model.toEntity()).toList();
-  }
-
-  // ========================================
-  // MESSAGE OPERATIONS
-  // ========================================
-
-  @override
-  Future<Message> sendMessage({
+  Future<Result<ChatMessage>> sendMessage({
     required String roomId,
+    required String senderId,
     required String content,
-    String type = 'text',
-    String? replyTo,
-    Map<String, dynamic> metadata = const {},
+    MessageType messageType = MessageType.text,
+    String? threadId,
+    String? replyToMessageId,
+    Map<String, String>? metadata,
   }) async {
-    final messageModel = await _remoteSource.sendMessage(
-      roomId: roomId,
-      content: content,
-      type: type,
-      replyTo: replyTo,
-      metadata: metadata,
-    );
-    return messageModel.toEntity();
+    try {
+      final messageModel = await _remoteDataSource.sendMessage(
+        roomId: roomId,
+        senderId: senderId,
+        content: content,
+        threadId: threadId,
+        replyToMessageId: replyToMessageId,
+        metadata: metadata,
+      );
+
+      // Cache the sent message
+      await _localDataSource.cacheMessage(
+        roomId: roomId,
+        message: messageModel,
+      );
+
+      return Success(messageModel.toEntity());
+    } catch (e) {
+      return ResultFailure(ServerFailure(message: e.toString()));
+    }
   }
 
   @override
-  Future<List<Message>> getMessages(
-    String roomId, {
+  Future<Result<List<ChatMessage>>> getMessages({
+    required String roomId,
     int limit = 50,
-    String? before,
+    String? beforeMessageId,
+    String? threadId,
   }) async {
-    final messageModels = await _remoteSource.getMessages(
-      roomId,
-      limit: limit,
-      before: before,
-    );
-    return messageModels.map((model) => model.toEntity()).toList();
+    try {
+      final remoteMessages = await _remoteDataSource.getMessages(
+        roomId: roomId,
+        limit: limit,
+        before: beforeMessageId,
+      );
+
+      // Cache the messages
+      await _localDataSource.cacheMessages(
+        roomId: roomId,
+        messages: remoteMessages,
+      );
+
+      final entities = remoteMessages.map((m) => m.toEntity()).toList();
+      return Success(entities);
+    } catch (e) {
+      // Fallback to cached messages
+      try {
+        final cachedMessages = await _localDataSource.getCachedMessages(
+          roomId: roomId,
+        );
+        final entities = cachedMessages.map((m) => m.toEntity()).toList();
+        return Success(entities);
+      } catch (cacheError) {
+        return ResultFailure(ServerFailure(message: 'Failed to get messages: $e'));
+      }
+    }
   }
 
   @override
-  Future<Message> editMessage(String messageId, String newContent) async {
-    final messageModel = await _remoteSource.editMessage(messageId, newContent);
-    return messageModel.toEntity();
-  }
-
-  @override
-  Future<void> deleteMessage(String messageId) async {
-    await _remoteSource.deleteMessage(messageId);
-  }
-
-  @override
-  Future<void> markMessageAsRead(String messageId) async {
-    await _remoteSource.markMessageAsRead(messageId);
-  }
-
-  @override
-  Future<void> markRoomAsRead(String roomId) async {
-    await _remoteSource.markRoomAsRead(roomId);
-  }
-
-  @override
-  Future<int> getUnreadCount(String roomId) async {
-    return await _remoteSource.getUnreadCount(roomId);
-  }
-
-  @override
-  Stream<List<Message>> watchMessages(String roomId) {
-    return _remoteSource.watchMessages(roomId).map((models) =>
-        models.map((model) => model.toEntity()).toList());
-  }
-
-  @override
-  Stream<Message> watchNewMessages() {
-    return _remoteSource.watchNewMessages().map((model) => model.toEntity());
-  }
-
-  // ========================================
-  // MESSAGE REACTIONS
-  // ========================================
-
-  @override
-  Future<void> addReaction(String messageId, String emoji) async {
-    await _remoteSource.addReaction(messageId, emoji);
-  }
-
-  @override
-  Future<void> removeReaction(String messageId, String emoji) async {
-    await _remoteSource.removeReaction(messageId, emoji);
-  }
-
-  // ========================================
-  // TYPING INDICATORS
-  // ========================================
-
-  @override
-  Future<void> startTyping(String roomId) async {
-    await _remoteSource.startTyping(roomId);
-  }
-
-  @override
-  Future<void> stopTyping(String roomId) async {
-    await _remoteSource.stopTyping(roomId);
-  }
-
-  @override
-  Stream<List<TypingIndicator>> watchTypingIndicators(String roomId) {
-    return _remoteSource.watchTypingIndicators(roomId).map((models) =>
-        models.map((model) => model.toEntity()).toList());
-  }
-
-  // ========================================
-  // USER PRESENCE
-  // ========================================
-
-  @override
-  Future<void> updatePresence({
-    required bool isOnline,
-    String status = 'available',
-  }) async {
-    await _remoteSource.updatePresence(isOnline: isOnline, status: status);
-  }
-
-  @override
-  Future<UserPresence?> getUserPresence(String userId) async {
-    final presenceModel = await _remoteSource.getUserPresence(userId);
-    return presenceModel?.toEntity();
-  }
-
-  @override
-  Future<List<UserPresence>> getUsersPresence(List<String> userIds) async {
-    final presenceModels = await _remoteSource.getUsersPresence(userIds);
-    return presenceModels.map((model) => model.toEntity()).toList();
-  }
-
-  @override
-  Stream<UserPresence> watchUserPresence(String userId) {
-    return _remoteSource.watchUserPresence(userId).map((model) => model.toEntity());
-  }
-
-  // ========================================
-  // SEARCH OPERATIONS
-  // ========================================
-
-  @override
-  Future<List<Message>> searchMessages(String roomId, String query) async {
-    final messageModels = await _remoteSource.searchMessages(roomId, query);
-    return messageModels.map((model) => model.toEntity()).toList();
-  }
-
-  @override
-  Future<List<Message>> searchAllMessages(String query) async {
-    // TODO: Implement search across all rooms
-    throw UnimplementedError('searchAllMessages not implemented yet');
-  }
-
-  // ========================================
-  // OFFLINE OPERATIONS
-  // ========================================
-
-  @override
-  Future<void> queueMessage({
-    required String tempId,
-    required String roomId,
+  Future<Result<ChatMessage>> editMessage({
+    required String messageId,
     required String content,
-    String type = 'text',
-    String? replyTo,
-    Map<String, dynamic> metadata = const {},
   }) async {
-    // TODO: Implement offline message queuing with local storage
-    throw UnimplementedError('queueMessage not implemented yet');
+    try {
+      final updatedMessage = await _remoteDataSource.editMessage(
+        messageId: messageId,
+        content: content,
+      );
+
+      // Update cached message
+      final roomId = updatedMessage.roomId;
+      await _localDataSource.cacheMessage(
+        roomId: roomId,
+        message: updatedMessage,
+      );
+
+      return Success(updatedMessage.toEntity());
+    } catch (e) {
+      return ResultFailure(ServerFailure(message: 'Failed to edit message: $e'));
+    }
   }
 
   @override
-  Future<List<Message>> getQueuedMessages() async {
-    // TODO: Implement get queued messages from local storage
-    throw UnimplementedError('getQueuedMessages not implemented yet');
+  Future<Result<void>> deleteMessage(String messageId) async {
+    try {
+      await _remoteDataSource.deleteMessage(messageId: messageId);
+      return const Success(null);
+    } catch (e) {
+      return ResultFailure(ServerFailure(message: 'Failed to delete message: $e'));
+    }
   }
 
   @override
-  Future<void> syncQueuedMessages() async {
-    // TODO: Implement sync queued messages with server
-    throw UnimplementedError('syncQueuedMessages not implemented yet');
+  Future<Result<ChatMessage>> addReaction({
+    required String messageId,
+    required String userId,
+    required String reaction,
+  }) async {
+    try {
+      await _remoteDataSource.addReaction(
+        messageId: messageId,
+        userId: userId,
+        emoji: reaction,
+      );
+
+      // Get updated message to return
+      // For now, create a simple success response
+      // TODO: Get and return the updated message with reactions
+      return ResultFailure(const NotImplementedFailure('addReaction result not implemented'));
+    } catch (e) {
+      return ResultFailure(ServerFailure(message: 'Failed to add reaction: $e'));
+    }
   }
 
   @override
-  Future<void> clearQueuedMessages() async {
-    // TODO: Implement clear queued messages
-    throw UnimplementedError('clearQueuedMessages not implemented yet');
+  Future<Result<ChatMessage>> removeReaction({
+    required String messageId,
+    required String userId,
+    required String reaction,
+  }) async {
+    try {
+      await _remoteDataSource.removeReaction(
+        messageId: messageId,
+        userId: userId,
+        emoji: reaction,
+      );
+
+      // Get updated message to return
+      // For now, create a simple success response  
+      // TODO: Get and return the updated message with reactions
+      return ResultFailure(const NotImplementedFailure('removeReaction result not implemented'));
+    } catch (e) {
+      return ResultFailure(ServerFailure(message: 'Failed to remove reaction: $e'));
+    }
   }
 
-  // ========================================
-  // UTILITY OPERATIONS
-  // ========================================
-
   @override
-  Future<void> cleanup() async {
-    // TODO: Implement database cleanup
-    throw UnimplementedError('cleanup not implemented yet');
+  Future<Result<MessageThread>> createThread({
+    required String roomId,
+    required String rootMessageId,
+  }) async {
+    try {
+      final threadModel = await _remoteDataSource.createThread(
+        roomId: roomId,
+        rootMessageId: rootMessageId,
+      );
+
+      // Cache the thread
+      await _localDataSource.cacheThread(
+        roomId: roomId,
+        thread: threadModel,
+      );
+
+      return Success(threadModel.toEntity());
+    } catch (e) {
+      return ResultFailure(ServerFailure(message: 'Failed to create thread: $e'));
+    }
   }
 
   @override
-  Future<Map<String, dynamic>> getStatistics() async {
-    // TODO: Implement get database statistics
-    throw UnimplementedError('getStatistics not implemented yet');
+  Future<Result<List<MessageThread>>> getThreads(String roomId) async {
+    try {
+      final threadModels = await _remoteDataSource.getThreads(
+        roomId: roomId,
+        limit: 20,
+      );
+
+      // Cache the threads
+      await _localDataSource.cacheThreads(
+        roomId: roomId,
+        threads: threadModels,
+      );
+
+      final entities = threadModels.map((t) => t.toEntity()).toList();
+      return Success(entities);
+    } catch (e) {
+      // Fallback to cached threads
+      try {
+        final cachedThreads = await _localDataSource.getCachedThreads(
+          roomId: roomId,
+        );
+        final entities = cachedThreads.map((t) => t.toEntity()).toList();
+        return Success(entities);
+      } catch (cacheError) {
+        return ResultFailure(ServerFailure(message: 'Failed to get threads: $e'));
+      }
+    }
+  }
+
+  @override
+  Future<Result<void>> markMessagesAsRead({
+    required String roomId,
+    required String userId,
+    String? lastMessageId,
+  }) async {
+    try {
+      // Use current time if no specific message timestamp is provided
+      await _remoteDataSource.markMessagesAsRead(
+        roomId: roomId,
+        userId: userId,
+        upToTimestamp: DateTime.now(),
+      );
+      return const Success(null);
+    } catch (e) {
+      return ResultFailure(ServerFailure(message: 'Failed to mark messages as read: $e'));
+    }
+  }
+
+  @override
+  Future<Result<List<ChatMessage>>> searchMessages({
+    required String roomId,
+    required String query,
+    int limit = 50,
+  }) async {
+    try {
+      final messages = await _remoteDataSource.searchMessages(
+        roomId: roomId,
+        query: query,
+        limit: limit,
+      );
+
+      final entities = messages.map((m) => m.toEntity()).toList();
+      return Success(entities);
+    } catch (e) {
+      return ResultFailure(ServerFailure(message: 'Failed to search messages: $e'));
+    }
   }
 }

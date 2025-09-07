@@ -1,0 +1,32 @@
+#!/bin/bash
+# TDD Pre-commit hook for WhatsApp Clone
+
+set -e
+
+echo "🔍 Running TDD pre-commit checks..."
+
+# 1. Analyze code
+echo "📊 Running flutter analyze..."
+if ! flutter analyze --no-congratulate; then
+    echo "❌ Flutter analyze failed. Fix errors before committing."
+    exit 1
+fi
+
+# 2. Run tests
+echo "🧪 Running tests..."
+if ! flutter test; then
+    echo "❌ Tests failed. All tests must pass before committing."
+    exit 1
+fi
+
+# 3. Check test coverage
+echo "📈 Checking test coverage..."
+flutter test --coverage
+if [ -f coverage/lcov.info ]; then
+    # Parse coverage percentage (basic check)
+    echo "✅ Coverage report generated"
+else
+    echo "⚠️  Coverage report not generated"
+fi
+
+echo "✅ All TDD checks passed! Ready to commit."

@@ -3,229 +3,332 @@ import 'package:whatsapp_clone/features/file_storage/domain/entities/file_entity
 
 void main() {
   group('FileEntity', () {
-    late FileEntity fileEntity;
+    final testFileEntity = FileEntity(
+      id: 'file_123',
+      filename: 'test_file_processed.jpg',
+      originalName: 'test_file.jpg',
+      fileType: FileType.image,
+      fileSize: 1024000, // 1MB
+      storagePath: 'files/2024/01/test_file_processed.jpg',
+      thumbnailPath: 'files/2024/01/thumbnails/test_file_thumb.jpg',
+      uploadedBy: 'user_123',
+      uploadedAt: DateTime.parse('2024-01-15T10:30:00Z'),
+      metadata: {'width': 1920, 'height': 1080, 'camera': 'iPhone 15'},
+      mimeType: 'image/jpeg',
+      checksum: 'sha256:abc123def456',
+      compressionRatio: 0.8,
+      uploadStatus: UploadStatus.completed,
+      uploadProgress: 100.0,
+    );
 
-    setUp(() {
-      fileEntity = FileEntity(
-        id: 'test-file-id',
-        filename: 'test_image.jpg',
-        originalName: 'my_photo.jpg',
-        fileType: FileType.image,
-        fileSize: 1024,
-        storagePath: 'images/test_image.jpg',
-        thumbnailPath: 'thumbnails/test_image_thumb.jpg',
-        uploadedBy: 'user-123',
-        uploadedAt: DateTime(2023, 1, 1),
-        metadata: {'camera': 'iPhone'},
-        mimeType: 'image/jpeg',
-        checksum: 'abc123',
-        compressionRatio: 0.8,
-        uploadStatus: UploadStatus.completed,
-        uploadProgress: 100.0,
-      );
+    group('constructor', () {
+      test('should create FileEntity with all required properties', () {
+        expect(testFileEntity.id, equals('file_123'));
+        expect(testFileEntity.filename, equals('test_file_processed.jpg'));
+        expect(testFileEntity.originalName, equals('test_file.jpg'));
+        expect(testFileEntity.fileType, equals(FileType.image));
+        expect(testFileEntity.fileSize, equals(1024000));
+        expect(testFileEntity.storagePath, equals('files/2024/01/test_file_processed.jpg'));
+        expect(testFileEntity.uploadedBy, equals('user_123'));
+        expect(testFileEntity.uploadedAt, equals(DateTime.parse('2024-01-15T10:30:00Z')));
+      });
+
+      test('should create FileEntity with default values for optional properties', () {
+        final minimalEntity = FileEntity(
+          id: 'file_456',
+          filename: 'minimal.pdf',
+          originalName: 'minimal.pdf',
+          fileType: FileType.document,
+          fileSize: 50000,
+          storagePath: 'files/minimal.pdf',
+          uploadedBy: 'user_456',
+          uploadedAt: DateTime.parse('2024-01-16T11:00:00Z'),
+        );
+
+        expect(minimalEntity.thumbnailPath, isNull);
+        expect(minimalEntity.metadata, equals(const <String, dynamic>{}));
+        expect(minimalEntity.mimeType, isNull);
+        expect(minimalEntity.checksum, isNull);
+        expect(minimalEntity.compressionRatio, isNull);
+        expect(minimalEntity.uploadStatus, equals(UploadStatus.completed));
+        expect(minimalEntity.uploadProgress, equals(100.0));
+      });
     });
 
-    test('should create file entity with all properties', () {
-      expect(fileEntity.id, 'test-file-id');
-      expect(fileEntity.filename, 'test_image.jpg');
-      expect(fileEntity.originalName, 'my_photo.jpg');
-      expect(fileEntity.fileType, FileType.image);
-      expect(fileEntity.fileSize, 1024);
-      expect(fileEntity.storagePath, 'images/test_image.jpg');
-      expect(fileEntity.thumbnailPath, 'thumbnails/test_image_thumb.jpg');
-      expect(fileEntity.uploadedBy, 'user-123');
-      expect(fileEntity.uploadedAt, DateTime(2023, 1, 1));
-      expect(fileEntity.metadata, {'camera': 'iPhone'});
-      expect(fileEntity.mimeType, 'image/jpeg');
-      expect(fileEntity.checksum, 'abc123');
-      expect(fileEntity.compressionRatio, 0.8);
-      expect(fileEntity.uploadStatus, UploadStatus.completed);
-      expect(fileEntity.uploadProgress, 100.0);
+    group('FileType enum', () {
+      test('should correctly identify file type from extension', () {
+        expect(FileType.fromExtension('jpg'), equals(FileType.image));
+        expect(FileType.fromExtension('PNG'), equals(FileType.image));
+        expect(FileType.fromExtension('mp4'), equals(FileType.video));
+        expect(FileType.fromExtension('MOV'), equals(FileType.video));
+        expect(FileType.fromExtension('mp3'), equals(FileType.audio));
+        expect(FileType.fromExtension('WAV'), equals(FileType.audio));
+        expect(FileType.fromExtension('pdf'), equals(FileType.document));
+        expect(FileType.fromExtension('DOCX'), equals(FileType.document));
+        expect(FileType.fromExtension('unknown'), equals(FileType.other));
+      });
+
+      test('should convert from string value', () {
+        expect(FileType.fromString('image'), equals(FileType.image));
+        expect(FileType.fromString('video'), equals(FileType.video));
+        expect(FileType.fromString('audio'), equals(FileType.audio));
+        expect(FileType.fromString('document'), equals(FileType.document));
+        expect(FileType.fromString('other'), equals(FileType.other));
+        expect(FileType.fromString('invalid'), equals(FileType.other));
+      });
     });
 
-    test('should have correct extension getter', () {
-      expect(fileEntity.extension, 'jpg');
+    group('UploadStatus enum', () {
+      test('should convert from string value', () {
+        expect(UploadStatus.fromString('pending'), equals(UploadStatus.pending));
+        expect(UploadStatus.fromString('uploading'), equals(UploadStatus.uploading));
+        expect(UploadStatus.fromString('processing'), equals(UploadStatus.processing));
+        expect(UploadStatus.fromString('completed'), equals(UploadStatus.completed));
+        expect(UploadStatus.fromString('failed'), equals(UploadStatus.failed));
+        expect(UploadStatus.fromString('cancelled'), equals(UploadStatus.cancelled));
+        expect(UploadStatus.fromString('invalid'), equals(UploadStatus.pending));
+      });
     });
 
-    test('should have correct thumbnail check', () {
-      expect(fileEntity.hasThumbnail, true);
-      
-      final fileWithoutThumbnail = fileEntity.copyWith(thumbnailPath: '');
-      expect(fileWithoutThumbnail.hasThumbnail, false);
+    group('computed properties', () {
+      test('should extract file extension correctly', () {
+        expect(testFileEntity.extension, equals('jpg'));
+        
+        final noExtEntity = FileEntity(
+          id: 'file_no_ext',
+          filename: 'noextfile',
+          originalName: 'noextfile',
+          fileType: FileType.other,
+          fileSize: 100,
+          storagePath: 'files/noextfile',
+          uploadedBy: 'user_123',
+          uploadedAt: DateTime.parse('2024-01-15T10:30:00Z'),
+        );
+        expect(noExtEntity.extension, equals(''));
+      });
+
+      test('should identify if file has thumbnail', () {
+        expect(testFileEntity.hasThumbnail, isTrue);
+        
+        final noThumbEntity = FileEntity(
+          id: 'file_no_thumb',
+          filename: 'nothumb.pdf',
+          originalName: 'nothumb.pdf',
+          fileType: FileType.document,
+          fileSize: 100,
+          storagePath: 'files/nothumb.pdf',
+          uploadedBy: 'user_123',
+          uploadedAt: DateTime.parse('2024-01-15T10:30:00Z'),
+        );
+        expect(noThumbEntity.hasThumbnail, isFalse);
+      });
+
+      test('should identify file types correctly', () {
+        expect(testFileEntity.isImage, isTrue);
+        expect(testFileEntity.isVideo, isFalse);
+        expect(testFileEntity.isAudio, isFalse);
+        expect(testFileEntity.isDocument, isFalse);
+      });
+
+      test('should identify upload status correctly', () {
+        expect(testFileEntity.isUploading, isFalse);
+        expect(testFileEntity.isCompleted, isTrue);
+        expect(testFileEntity.isFailed, isFalse);
+
+        final uploadingEntity = testFileEntity.copyWith(
+          uploadStatus: UploadStatus.uploading,
+          uploadProgress: 50.0,
+        );
+        expect(uploadingEntity.isUploading, isTrue);
+        expect(uploadingEntity.isCompleted, isFalse);
+      });
+
+      test('should format file size correctly', () {
+        final bytesEntity = FileEntity(
+          id: 'small',
+          filename: 'small.txt',
+          originalName: 'small.txt',
+          fileType: FileType.document,
+          fileSize: 512,
+          storagePath: 'files/small.txt',
+          uploadedBy: 'user_123',
+          uploadedAt: DateTime.parse('2024-01-15T10:30:00Z'),
+        );
+        expect(bytesEntity.formattedSize, equals('512 B'));
+
+        final kbEntity = bytesEntity.copyWith(fileSize: 2048);
+        expect(kbEntity.formattedSize, equals('2.0 KB'));
+
+        expect(testFileEntity.formattedSize, equals('1000.0 KB'));
+
+        final gbEntity = bytesEntity.copyWith(fileSize: 2147483648);
+        expect(gbEntity.formattedSize, equals('2.0 GB'));
+      });
     });
 
-    test('should have correct file type checks', () {
-      expect(fileEntity.isImage, true);
-      expect(fileEntity.isVideo, false);
-      expect(fileEntity.isAudio, false);
-      expect(fileEntity.isDocument, false);
+    group('copyWith', () {
+      test('should create copy with updated fields', () {
+        final updatedEntity = testFileEntity.copyWith(
+          uploadStatus: UploadStatus.uploading,
+          uploadProgress: 75.0,
+        );
+
+        expect(updatedEntity.id, equals(testFileEntity.id));
+        expect(updatedEntity.filename, equals(testFileEntity.filename));
+        expect(updatedEntity.uploadStatus, equals(UploadStatus.uploading));
+        expect(updatedEntity.uploadProgress, equals(75.0));
+      });
+
+      test('should preserve original values when no updates provided', () {
+        final copiedEntity = testFileEntity.copyWith();
+
+        expect(copiedEntity, equals(testFileEntity));
+        expect(copiedEntity.hashCode, equals(testFileEntity.hashCode));
+      });
     });
 
-    test('should have correct upload status checks', () {
-      expect(fileEntity.isUploading, false);
-      expect(fileEntity.isCompleted, true);
-      expect(fileEntity.isFailed, false);
+    group('equality', () {
+      test('should be equal when all properties match', () {
+        final otherEntity = FileEntity(
+          id: 'file_123',
+          filename: 'test_file_processed.jpg',
+          originalName: 'test_file.jpg',
+          fileType: FileType.image,
+          fileSize: 1024000,
+          storagePath: 'files/2024/01/test_file_processed.jpg',
+          thumbnailPath: 'files/2024/01/thumbnails/test_file_thumb.jpg',
+          uploadedBy: 'user_123',
+          uploadedAt: DateTime.parse('2024-01-15T10:30:00Z'),
+          metadata: {'width': 1920, 'height': 1080, 'camera': 'iPhone 15'},
+          mimeType: 'image/jpeg',
+          checksum: 'sha256:abc123def456',
+          compressionRatio: 0.8,
+          uploadStatus: UploadStatus.completed,
+          uploadProgress: 100.0,
+        );
 
-      final uploadingFile = fileEntity.copyWith(uploadStatus: UploadStatus.uploading);
-      expect(uploadingFile.isUploading, true);
-      expect(uploadingFile.isCompleted, false);
+        expect(testFileEntity, equals(otherEntity));
+        expect(testFileEntity.hashCode, equals(otherEntity.hashCode));
+      });
 
-      final failedFile = fileEntity.copyWith(uploadStatus: UploadStatus.failed);
-      expect(failedFile.isFailed, true);
-      expect(failedFile.isCompleted, false);
-    });
+      test('should not be equal when properties differ', () {
+        final differentEntity = testFileEntity.copyWith(id: 'different_id');
 
-    test('should format file size correctly', () {
-      final smallFile = fileEntity.copyWith(fileSize: 512);
-      expect(smallFile.formattedSize, '512 B');
-
-      final kbFile = fileEntity.copyWith(fileSize: 2048);
-      expect(kbFile.formattedSize, '2.0 KB');
-
-      final mbFile = fileEntity.copyWith(fileSize: 5242880);
-      expect(mbFile.formattedSize, '5.0 MB');
-
-      final gbFile = fileEntity.copyWith(fileSize: 1073741824);
-      expect(gbFile.formattedSize, '1.0 GB');
-    });
-
-    test('should create copy with updated fields', () {
-      final copiedFile = fileEntity.copyWith(
-        filename: 'updated_image.jpg',
-        fileSize: 2048,
-      );
-
-      expect(copiedFile.filename, 'updated_image.jpg');
-      expect(copiedFile.fileSize, 2048);
-      expect(copiedFile.originalName, fileEntity.originalName); // unchanged
-      expect(copiedFile.id, fileEntity.id); // unchanged
-    });
-  });
-
-  group('FileType', () {
-    test('should create from string correctly', () {
-      expect(FileType.fromString('image'), FileType.image);
-      expect(FileType.fromString('video'), FileType.video);
-      expect(FileType.fromString('audio'), FileType.audio);
-      expect(FileType.fromString('document'), FileType.document);
-      expect(FileType.fromString('other'), FileType.other);
-      expect(FileType.fromString('invalid'), FileType.other); // fallback
-    });
-
-    test('should create from extension correctly', () {
-      expect(FileType.fromExtension('jpg'), FileType.image);
-      expect(FileType.fromExtension('jpeg'), FileType.image);
-      expect(FileType.fromExtension('png'), FileType.image);
-      expect(FileType.fromExtension('webp'), FileType.image);
-      expect(FileType.fromExtension('gif'), FileType.image);
-
-      expect(FileType.fromExtension('mp4'), FileType.video);
-      expect(FileType.fromExtension('mov'), FileType.video);
-      expect(FileType.fromExtension('avi'), FileType.video);
-      expect(FileType.fromExtension('webm'), FileType.video);
-
-      expect(FileType.fromExtension('mp3'), FileType.audio);
-      expect(FileType.fromExtension('wav'), FileType.audio);
-      expect(FileType.fromExtension('m4a'), FileType.audio);
-      expect(FileType.fromExtension('aac'), FileType.audio);
-
-      expect(FileType.fromExtension('pdf'), FileType.document);
-      expect(FileType.fromExtension('doc'), FileType.document);
-      expect(FileType.fromExtension('docx'), FileType.document);
-      expect(FileType.fromExtension('xls'), FileType.document);
-      expect(FileType.fromExtension('xlsx'), FileType.document);
-      expect(FileType.fromExtension('ppt'), FileType.document);
-      expect(FileType.fromExtension('pptx'), FileType.document);
-      expect(FileType.fromExtension('txt'), FileType.document);
-
-      expect(FileType.fromExtension('unknown'), FileType.other);
-    });
-  });
-
-  group('UploadStatus', () {
-    test('should create from string correctly', () {
-      expect(UploadStatus.fromString('pending'), UploadStatus.pending);
-      expect(UploadStatus.fromString('uploading'), UploadStatus.uploading);
-      expect(UploadStatus.fromString('processing'), UploadStatus.processing);
-      expect(UploadStatus.fromString('completed'), UploadStatus.completed);
-      expect(UploadStatus.fromString('failed'), UploadStatus.failed);
-      expect(UploadStatus.fromString('cancelled'), UploadStatus.cancelled);
-      expect(UploadStatus.fromString('invalid'), UploadStatus.pending); // fallback
+        expect(testFileEntity, isNot(equals(differentEntity)));
+        expect(testFileEntity.hashCode, isNot(equals(differentEntity.hashCode)));
+      });
     });
   });
 
   group('UploadProgressEntity', () {
-    late UploadProgressEntity progressEntity;
+    final testProgress = UploadProgressEntity(
+      fileId: 'file_123',
+      uploadedBytes: 512000,
+      totalBytes: 1024000,
+      status: UploadStatus.uploading,
+      error: null,
+      eta: Duration(seconds: 30),
+      speed: 17000.0,
+    );
 
-    setUp(() {
-      progressEntity = UploadProgressEntity(
-        fileId: 'file-123',
-        uploadedBytes: 500,
-        totalBytes: 1000,
-        status: UploadStatus.uploading,
-        error: null,
-        eta: Duration(seconds: 30),
-        speed: 16.67,
-      );
+    group('constructor', () {
+      test('should create UploadProgressEntity with all properties', () {
+        expect(testProgress.fileId, equals('file_123'));
+        expect(testProgress.uploadedBytes, equals(512000));
+        expect(testProgress.totalBytes, equals(1024000));
+        expect(testProgress.status, equals(UploadStatus.uploading));
+        expect(testProgress.eta, equals(const Duration(seconds: 30)));
+        expect(testProgress.speed, equals(17000.0));
+      });
     });
 
-    test('should create upload progress entity with all properties', () {
-      expect(progressEntity.fileId, 'file-123');
-      expect(progressEntity.uploadedBytes, 500);
-      expect(progressEntity.totalBytes, 1000);
-      expect(progressEntity.status, UploadStatus.uploading);
-      expect(progressEntity.error, null);
-      expect(progressEntity.eta, Duration(seconds: 30));
-      expect(progressEntity.speed, 16.67);
+    group('computed properties', () {
+      test('should calculate progress percentage correctly', () {
+        expect(testProgress.progress, equals(50.0));
+        
+        final completedProgress = UploadProgressEntity(
+          fileId: 'file_456',
+          uploadedBytes: 1000,
+          totalBytes: 1000,
+          status: UploadStatus.completed,
+        );
+        expect(completedProgress.progress, equals(100.0));
+
+        final zeroTotalProgress = UploadProgressEntity(
+          fileId: 'file_789',
+          uploadedBytes: 0,
+          totalBytes: 0,
+          status: UploadStatus.pending,
+        );
+        expect(zeroTotalProgress.progress, equals(0.0));
+      });
+
+      test('should identify completion status correctly', () {
+        expect(testProgress.isComplete, isFalse);
+        expect(testProgress.hasFailed, isFalse);
+
+        final completedProgress = testProgress.copyWith(status: UploadStatus.completed);
+        expect(completedProgress.isComplete, isTrue);
+
+        final failedProgress = testProgress.copyWith(status: UploadStatus.failed);
+        expect(failedProgress.hasFailed, isTrue);
+      });
+
+      test('should format speed correctly', () {
+        expect(testProgress.formattedSpeed, equals('16.6 KB/s'));
+
+        final slowProgress = testProgress.copyWith(speed: 500.0);
+        expect(slowProgress.formattedSpeed, equals('500 B/s'));
+
+        final fastProgress = testProgress.copyWith(speed: 2097152.0);
+        expect(fastProgress.formattedSpeed, equals('2.0 MB/s'));
+
+        final noSpeedProgress = UploadProgressEntity(
+          fileId: 'file_no_speed',
+          uploadedBytes: 500,
+          totalBytes: 1000,
+          status: UploadStatus.uploading,
+          // speed is not provided, so it will be null
+        );
+        expect(noSpeedProgress.formattedSpeed, isNull);
+      });
     });
 
-    test('should calculate progress correctly', () {
-      expect(progressEntity.progress, 50.0);
+    group('copyWith', () {
+      test('should create copy with updated fields', () {
+        final updatedProgress = testProgress.copyWith(
+          uploadedBytes: 768000,
+          status: UploadStatus.processing,
+        );
 
-      final zeroTotalProgress = progressEntity.copyWith(totalBytes: 0);
-      expect(zeroTotalProgress.progress, 0.0);
+        expect(updatedProgress.fileId, equals(testProgress.fileId));
+        expect(updatedProgress.uploadedBytes, equals(768000));
+        expect(updatedProgress.totalBytes, equals(testProgress.totalBytes));
+        expect(updatedProgress.status, equals(UploadStatus.processing));
+        expect(updatedProgress.speed, equals(testProgress.speed));
+      });
     });
 
-    test('should have correct status checks', () {
-      expect(progressEntity.isComplete, false);
-      expect(progressEntity.hasFailed, false);
+    group('equality', () {
+      test('should be equal when all properties match', () {
+        final otherProgress = UploadProgressEntity(
+          fileId: 'file_123',
+          uploadedBytes: 512000,
+          totalBytes: 1024000,
+          status: UploadStatus.uploading,
+          error: null,
+          eta: Duration(seconds: 30),
+          speed: 17000.0,
+        );
 
-      final completedProgress = progressEntity.copyWith(status: UploadStatus.completed);
-      expect(completedProgress.isComplete, true);
+        expect(testProgress, equals(otherProgress));
+      });
 
-      final failedProgress = progressEntity.copyWith(status: UploadStatus.failed);
-      expect(failedProgress.hasFailed, true);
-    });
+      test('should not be equal when properties differ', () {
+        final differentProgress = testProgress.copyWith(uploadedBytes: 400000);
 
-    test('should format speed correctly', () {
-      expect(progressEntity.formattedSpeed, '17 B/s');
-
-      final kbProgress = progressEntity.copyWith(speed: 1536.0);
-      expect(kbProgress.formattedSpeed, '1.5 KB/s');
-
-      final mbProgress = progressEntity.copyWith(speed: 2097152.0);
-      expect(mbProgress.formattedSpeed, '2.0 MB/s');
-
-      final nullSpeedProgress = UploadProgressEntity(
-        fileId: 'test',
-        uploadedBytes: 0,
-        totalBytes: 100,
-        status: UploadStatus.uploading,
-        speed: null,
-      );
-      expect(nullSpeedProgress.formattedSpeed, null);
-    });
-
-    test('should create copy with updated fields', () {
-      final copiedProgress = progressEntity.copyWith(
-        uploadedBytes: 750,
-        speed: 25.0,
-      );
-
-      expect(copiedProgress.uploadedBytes, 750);
-      expect(copiedProgress.speed, 25.0);
-      expect(copiedProgress.totalBytes, progressEntity.totalBytes); // unchanged
-      expect(copiedProgress.fileId, progressEntity.fileId); // unchanged
+        expect(testProgress, isNot(equals(differentProgress)));
+      });
     });
   });
 }

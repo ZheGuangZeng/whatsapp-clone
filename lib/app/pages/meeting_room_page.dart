@@ -3,8 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/meetings/presentation/widgets/participant_grid.dart';
-import '../../features/meetings/presentation/widgets/meeting_controls.dart';
+// Removed unused meeting widget imports
 
 /// Meeting room page with participant grid and controls
 class MeetingRoomPage extends ConsumerStatefulWidget {
@@ -55,7 +54,7 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
   }
 
   void _scheduleControlsAutoHide() {
-    Future.delayed(const Duration(seconds: 5), () {
+    Future<void>.delayed(const Duration(seconds: 5), () {
       if (mounted) {
         setState(() => _isControlsVisible = false);
       }
@@ -146,7 +145,7 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withOpacity(0.8),
+            Colors.black.withValues(alpha: 0.8),
             Colors.transparent,
           ],
         ),
@@ -177,10 +176,10 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.2),
+                          color: Colors.green.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.green.withOpacity(0.5),
+                            color: Colors.green.withValues(alpha: 0.5),
                           ),
                         ),
                         child: Row(
@@ -250,7 +249,7 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(20),
       ),
       child: IconButton(
@@ -269,7 +268,7 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
           begin: Alignment.bottomCenter,
           end: Alignment.topCenter,
           colors: [
-            Colors.black.withOpacity(0.8),
+            Colors.black.withValues(alpha: 0.8),
             Colors.transparent,
           ],
         ),
@@ -338,10 +337,10 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
       backgroundColor = const Color(0xFF25D366);
       iconColor = Colors.white;
     } else if (isActive) {
-      backgroundColor = Colors.white.withOpacity(0.2);
+      backgroundColor = Colors.white.withValues(alpha: 0.2);
       iconColor = Colors.white;
     } else {
-      backgroundColor = Colors.red.withOpacity(0.8);
+      backgroundColor = Colors.red.withValues(alpha: 0.8);
       iconColor = Colors.white;
     }
 
@@ -353,7 +352,7 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -377,7 +376,7 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
   }
 
   void _showParticipantsList() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.grey[900],
       builder: (context) => Container(
@@ -408,7 +407,7 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
   Widget _buildParticipantListItem(String name, bool isCurrentUser) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: const Color(0xFF25D366).withOpacity(0.2),
+        backgroundColor: const Color(0xFF25D366).withValues(alpha: 0.2),
         child: Text(
           name[0],
           style: const TextStyle(color: Color(0xFF25D366)),
@@ -450,7 +449,7 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
   }
 
   void _showMoreOptions() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.grey[900],
       builder: (context) => Container(
@@ -534,7 +533,7 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
   }
 
   void _showLeaveConfirmation() {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],

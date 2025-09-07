@@ -154,11 +154,11 @@ class SettingsPage extends ConsumerWidget {
         children: [
           CircleAvatar(
             radius: 32,
-            backgroundColor: const Color(0xFF25D366).withOpacity(0.1),
+            backgroundColor: const Color(0xFF25D366).withValues(alpha: 0.1),
             child: Text(
               user.displayName?.isNotEmpty == true 
-                  ? user.displayName![0].toUpperCase()
-                  : user.email?[0].toUpperCase() ?? 'U',
+                  ? (user.displayName as String)[0].toUpperCase()
+                  : (user.email as String?)?[0].toUpperCase() ?? 'U',
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -172,7 +172,7 @@ class SettingsPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user.displayName ?? 'No name set',
+                  (user.displayName as String?) ?? 'No name set',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
@@ -180,7 +180,7 @@ class SettingsPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  user.email ?? 'No email',
+                  (user.email as String?) ?? 'No email',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
@@ -189,7 +189,7 @@ class SettingsPage extends ConsumerWidget {
                 if (user.phone != null) ...[
                   const SizedBox(height: 2),
                   Text(
-                    user.phone!,
+                    (user.phone as String),
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],
@@ -264,7 +264,7 @@ class SettingsPage extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
-            side: BorderSide(color: Colors.red.withOpacity(0.3)),
+            side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
           ),
         ),
         child: Row(
@@ -290,7 +290,7 @@ class SettingsPage extends ConsumerWidget {
   }
 
   void _showThemeSelector(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       builder: (context) => Container(
         padding: const EdgeInsets.all(16),
@@ -360,7 +360,7 @@ class SettingsPage extends ConsumerWidget {
   }
 
   void _showLogoutDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Log Out'),

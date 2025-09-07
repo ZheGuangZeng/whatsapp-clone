@@ -1,127 +1,77 @@
 import 'package:equatable/equatable.dart';
+import 'participant_role.dart';
 
-/// Enum for participant roles in a room
-enum ParticipantRole {
-  admin('admin'),
-  member('member');
-
-  const ParticipantRole(this.value);
-  final String value;
-
-  static ParticipantRole fromString(String value) {
-    return ParticipantRole.values.firstWhere(
-      (role) => role.value == value,
-      orElse: () => ParticipantRole.member,
-    );
-  }
-}
-
-/// Domain entity representing a room participant
+/// Domain entity representing a participant in a chat room
 class Participant extends Equatable {
   const Participant({
     required this.id,
-    required this.roomId,
     required this.userId,
-    required this.displayName,
-    this.email,
-    this.avatarUrl,
-    this.role = ParticipantRole.member,
+    required this.roomId,
     required this.joinedAt,
-    this.leftAt,
+    this.role = ParticipantRole.member,
     this.isActive = true,
-    this.isOnline = false,
-    this.lastSeen,
-  });
+    this.lastActivity,
+    this.permissions = const [],
+  }) : assert(id.length > 0, 'Participant ID cannot be empty'),
+       assert(userId.length > 0, 'User ID cannot be empty'),
+       assert(roomId.length > 0, 'Room ID cannot be empty');
 
-  /// Unique identifier for the participation record
+  /// Unique identifier for the participant
   final String id;
-
-  /// ID of the room
-  final String roomId;
-
-  /// ID of the user
+  
+  /// ID of the user this participant represents
   final String userId;
-
-  /// Display name of the participant
-  final String displayName;
-
-  /// Email of the participant
-  final String? email;
-
-  /// Avatar URL of the participant
-  final String? avatarUrl;
-
-  /// Role of the participant in the room
-  final ParticipantRole role;
-
+  
+  /// ID of the room this participant belongs to
+  final String roomId;
+  
   /// When the participant joined the room
   final DateTime joinedAt;
-
-  /// When the participant left the room (if they left)
-  final DateTime? leftAt;
-
-  /// Whether the participant is still active in the room
+  
+  /// Role of the participant in the room
+  final ParticipantRole role;
+  
+  /// Whether the participant is currently active
   final bool isActive;
-
-  /// Whether the participant is currently online
-  final bool isOnline;
-
-  /// When the participant was last seen online
-  final DateTime? lastSeen;
-
-  /// Whether the participant is an admin
-  bool get isAdmin => role == ParticipantRole.admin;
-
-  /// Whether the participant is a regular member
-  bool get isMember => role == ParticipantRole.member;
-
-  /// Whether the participant has left the room
-  bool get hasLeft => leftAt != null;
+  
+  /// Timestamp of the participant's last activity
+  final DateTime? lastActivity;
+  
+  /// List of specific permissions for this participant
+  final List<String> permissions;
 
   @override
   List<Object?> get props => [
-        id,
-        roomId,
-        userId,
-        displayName,
-        email,
-        avatarUrl,
-        role,
-        joinedAt,
-        leftAt,
-        isActive,
-        isOnline,
-        lastSeen,
-      ];
+    id,
+    userId,
+    roomId,
+    joinedAt,
+    role,
+    isActive,
+    lastActivity,
+    permissions,
+  ];
 
   /// Creates a copy of this participant with updated fields
   Participant copyWith({
     String? id,
-    String? roomId,
     String? userId,
-    String? displayName,
-    String? email,
-    String? avatarUrl,
-    ParticipantRole? role,
+    String? roomId,
     DateTime? joinedAt,
-    DateTime? leftAt,
+    ParticipantRole? role,
     bool? isActive,
-    bool? isOnline,
-    DateTime? lastSeen,
+    DateTime? lastActivity,
+    List<String>? permissions,
   }) {
     return Participant(
       id: id ?? this.id,
-      roomId: roomId ?? this.roomId,
       userId: userId ?? this.userId,
-      displayName: displayName ?? this.displayName,
-      email: email ?? this.email,
-      avatarUrl: avatarUrl ?? this.avatarUrl,
-      role: role ?? this.role,
+      roomId: roomId ?? this.roomId,
       joinedAt: joinedAt ?? this.joinedAt,
-      leftAt: leftAt ?? this.leftAt,
+      role: role ?? this.role,
       isActive: isActive ?? this.isActive,
-      isOnline: isOnline ?? this.isOnline,
-      lastSeen: lastSeen ?? this.lastSeen,
+      lastActivity: lastActivity ?? this.lastActivity,
+      permissions: permissions ?? this.permissions,
     );
   }
 }
