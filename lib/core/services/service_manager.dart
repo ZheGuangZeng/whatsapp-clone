@@ -43,6 +43,8 @@ class ServiceManager {
   /// Initialize all services
   Future<void> initialize({
     required String liveKitUrl,
+    required String liveKitApiKey,
+    required String liveKitApiSecret,
     SupabaseClient? supabaseClient,
   }) async {
     if (_isInitialized) {
@@ -61,6 +63,8 @@ class ServiceManager {
       _meetingService = RealLiveKitMeetingService(
         supabaseClient: client,
         liveKitUrl: liveKitUrl,
+        liveKitApiKey: liveKitApiKey,
+        liveKitApiSecret: liveKitApiSecret,
       );
       
       // Start health monitoring

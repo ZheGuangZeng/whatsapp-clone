@@ -140,6 +140,8 @@ class ServiceFactory {
     final serviceManager = await ServiceManager.instance;
     await serviceManager.initialize(
       liveKitUrl: config.liveKitUrl,
+      liveKitApiKey: config.liveKitApiKey,
+      liveKitApiSecret: config.liveKitApiSecret,
     );
     
     developer.log('Supabase and services initialized successfully', name: _logTag);

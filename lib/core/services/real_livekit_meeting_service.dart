@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:livekit_client/livekit_client.dart';
@@ -11,6 +12,7 @@ import '../../features/meetings/domain/entities/meeting_state.dart';
 import '../../features/meetings/domain/repositories/i_meeting_repository.dart';
 import '../errors/failures.dart';
 import '../utils/result.dart';
+import 'livekit_token_service.dart';
 
 /// Real LiveKit + Supabase implementation of IMeetingRepository
 /// Provides actual meeting services using LiveKit for real-time communication
@@ -24,17 +26,38 @@ class RealLiveKitMeetingService implements IMeetingRepository {
 
   final SupabaseClient _supabaseClient;
   final String _liveKitUrl;
+  final LiveKitTokenService _tokenService;
   final Uuid _uuid;
 
   Room? _currentRoom;
+  String? _currentRoomName;
+  String? _currentUserId;
+  String? _currentDisplayName;
+  
+  // Connection monitoring
+  bool _isReconnecting = false;
+  int _reconnectAttempts = 0;
+  static const int _maxReconnectAttempts = 5;
+  static const Duration _initialReconnectDelay = Duration(seconds: 1);
+  
+  // Connection quality tracking
+  ConnectionQuality _connectionQuality = ConnectionQuality.excellent;
+  StreamController<ConnectionQuality>? _connectionQualityController;
+  StreamController<ConnectionState>? _connectionStateController;
 
   RealLiveKitMeetingService({
     SupabaseClient? supabaseClient,
     required String liveKitUrl,
+    required String liveKitApiKey,
+    required String liveKitApiSecret,
     Uuid? uuid,
   })  : _supabaseClient = supabaseClient ?? Supabase.instance.client,
         _liveKitUrl = liveKitUrl,
-        _uuid = uuid ?? const Uuid();
+        _tokenService = LiveKitTokenService(apiKey: liveKitApiKey, apiSecret: liveKitApiSecret),
+        _uuid = uuid ?? const Uuid() {
+    _connectionQualityController = StreamController<ConnectionQuality>.broadcast();
+    _connectionStateController = StreamController<ConnectionState>.broadcast();
+  }
 
   @override
   Future<Result<Meeting>> createMeeting(CreateMeetingParams params) async {
@@ -402,6 +425,23 @@ class RealLiveKitMeetingService implements IMeetingRepository {
 
   /// Get current room instance
   Room? get currentRoom => _currentRoom;
+  
+  /// Get connection quality stream
+  Stream<ConnectionQuality> get connectionQualityStream => 
+      _connectionQualityController?.stream ?? const Stream.empty();
+  
+  /// Get connection state stream
+  Stream<ConnectionState> get connectionStateStream => 
+      _connectionStateController?.stream ?? const Stream.empty();
+  
+  /// Get current connection quality
+  ConnectionQuality get currentConnectionQuality => _connectionQuality;
+  
+  /// Check if currently reconnecting
+  bool get isReconnecting => _isReconnecting;
+  
+  /// Get reconnection attempts count
+  int get reconnectionAttempts => _reconnectAttempts;
 
   /// Helper method to get meeting IDs where user is a participant
   Future<String> _getUserParticipantMeetingIds(String userId) async {
@@ -437,8 +477,14 @@ class RealLiveKitMeetingService implements IMeetingRepository {
   ) async {
     try {
       _currentRoom = Room();
+      _currentRoomName = roomName;
+      _currentUserId = userId;
+      _currentDisplayName = displayName;
       
-      // Generate access token (in production, this should be done server-side)
+      // Set up event listeners for connection monitoring
+      _setupRoomEventListeners();
+      
+      // Generate access token
       final token = await _generateAccessToken(roomName, userId, displayName);
       
       await _currentRoom!.connect(_liveKitUrl, token);
@@ -446,15 +492,119 @@ class RealLiveKitMeetingService implements IMeetingRepository {
       developer.log('Joined LiveKit room: $roomName', name: _logTag);
     } catch (error) {
       developer.log('Failed to join LiveKit room: $error', name: _logTag, level: 1000);
-      throw Exception('Failed to join LiveKit room: $error');
+      
+      // Attempt reconnection if this wasn't already a reconnect attempt
+      if (!_isReconnecting) {
+        await _attemptReconnection();
+      } else {
+        throw Exception('Failed to join LiveKit room: $error');
+      }
     }
+  }
+  
+  /// Set up room event listeners for connection monitoring
+  void _setupRoomEventListeners() {
+    if (_currentRoom == null) return;
+    
+    // Connection state changes
+    _currentRoom!.addListener(() {
+      final connectionState = _currentRoom!.connectionState;
+      developer.log('Room connection state changed: $connectionState', name: _logTag);
+      
+      _connectionStateController?.add(connectionState);
+      
+      // Handle disconnections
+      if (connectionState == ConnectionState.disconnected && !_isReconnecting) {
+        _attemptReconnection();
+      }
+    });
+    
+    // Connection quality updates  
+    _currentRoom!.localParticipant?.addListener(() {
+      final localParticipant = _currentRoom!.localParticipant;
+      if (localParticipant != null) {
+        final quality = localParticipant.connectionQuality;
+        if (quality != _connectionQuality) {
+          _connectionQuality = quality;
+          _connectionQualityController?.add(quality);
+          developer.log('Connection quality changed: $quality', name: _logTag);
+        }
+      }
+    });
+  }
+  
+  /// Attempt to reconnect to the room
+  Future<void> _attemptReconnection() async {
+    if (_isReconnecting || _currentRoomName == null || _currentUserId == null || _currentDisplayName == null) {
+      return;
+    }
+    
+    _isReconnecting = true;
+    _reconnectAttempts = 0;
+    
+    developer.log('Starting reconnection attempts', name: _logTag);
+    
+    while (_reconnectAttempts < _maxReconnectAttempts && _isReconnecting) {
+      _reconnectAttempts++;
+      
+      try {
+        developer.log('Reconnection attempt $_reconnectAttempts/$_maxReconnectAttempts', name: _logTag);
+        
+        // Wait with exponential backoff
+        final delay = _initialReconnectDelay * _reconnectAttempts;
+        await Future<void>.delayed(delay);
+        
+        // Clean up existing room
+        await _currentRoom?.disconnect();
+        _currentRoom?.dispose();
+        
+        // Create new room and connect
+        _currentRoom = Room();
+        _setupRoomEventListeners();
+        
+        final token = await _generateAccessToken(
+          _currentRoomName!,
+          _currentUserId!,
+          _currentDisplayName!,
+        );
+        
+        await _currentRoom!.connect(_liveKitUrl, token);
+        
+        developer.log('Successfully reconnected to room', name: _logTag);
+        _isReconnecting = false;
+        _reconnectAttempts = 0;
+        return;
+        
+      } catch (error) {
+        developer.log('Reconnection attempt $_reconnectAttempts failed: $error', name: _logTag, level: 900);
+        
+        if (_reconnectAttempts >= _maxReconnectAttempts) {
+          developer.log('Max reconnection attempts reached', name: _logTag, level: 1000);
+          _isReconnecting = false;
+          break;
+        }
+      }
+    }
+    
+    _isReconnecting = false;
   }
 
   /// Leave LiveKit room
   Future<void> _leaveLiveKitRoom() async {
     try {
+      // Stop reconnection attempts
+      _isReconnecting = false;
+      
       await _currentRoom?.disconnect();
+      _currentRoom?.dispose();
       _currentRoom = null;
+      
+      // Clear connection tracking
+      _currentRoomName = null;
+      _currentUserId = null;
+      _currentDisplayName = null;
+      _reconnectAttempts = 0;
+      
       developer.log('Left LiveKit room', name: _logTag);
     } catch (error) {
       developer.log('Error leaving LiveKit room: $error', name: _logTag, level: 1000);
@@ -478,9 +628,13 @@ class RealLiveKitMeetingService implements IMeetingRepository {
     String userId,
     String displayName,
   ) async {
-    // This is a simplified token generation
-    // In production, use proper JWT token generation with your server
-    return 'mock_token_${userId}_$roomName';
+    return await _tokenService.generateAccessToken(
+      roomName: roomName,
+      identity: userId,
+      name: displayName,
+      ttl: const Duration(hours: 6),
+      grants: ['screen_share'], // Allow screen sharing by default
+    );
   }
 
   /// Helper method to map database row to Meeting entity
@@ -537,6 +691,13 @@ class RealLiveKitMeetingService implements IMeetingRepository {
   /// Dispose resources
   void dispose() {
     _leaveLiveKitRoom();
+    
+    // Close stream controllers
+    _connectionQualityController?.close();
+    _connectionStateController?.close();
+    _connectionQualityController = null;
+    _connectionStateController = null;
+    
     developer.log('RealLiveKitMeetingService disposed', name: _logTag);
   }
 }

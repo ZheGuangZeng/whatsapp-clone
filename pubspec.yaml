@@ -49,6 +49,7 @@ dependencies:
   # Utilities
   equatable: ^2.0.5
   json_annotation: ^4.9.0
+  crypto: ^3.0.3
   
   # Security
   flutter_secure_storage: ^9.0.0

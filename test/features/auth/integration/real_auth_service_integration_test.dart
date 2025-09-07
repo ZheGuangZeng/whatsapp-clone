@@ -36,7 +36,11 @@ void main() {
 
       // Initialize service manager
       final serviceManager = await ServiceManager.instance;
-      await serviceManager.initialize(liveKitUrl: config.liveKitUrl);
+      await serviceManager.initialize(
+        liveKitUrl: config.liveKitUrl,
+        liveKitApiKey: config.liveKitApiKey,
+        liveKitApiSecret: config.liveKitApiSecret,
+      );
     });
 
     setUp(() async {

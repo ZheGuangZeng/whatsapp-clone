@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:livekit_client/livekit_client.dart';
 
-// Removed unused meeting widget imports
+import '../../features/meetings/presentation/widgets/participant_grid.dart';
 
 /// Meeting room page with participant grid and controls
 class MeetingRoomPage extends ConsumerStatefulWidget {
@@ -25,8 +26,8 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
   bool _isSpeakerOn = true;
   bool _isScreenSharing = false;
   
-  // TODO: Replace with actual LiveKit room instance
-  // For now we'll comment out the ParticipantGrid until LiveKit is properly integrated
+  // LiveKit room instance - TODO: Get from meeting service
+  Room? _room;
   
   @override
   void initState() {
@@ -60,6 +61,118 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
       }
     });
   }
+  
+  // LiveKit control methods
+  Future<void> _toggleMicrophone() async {
+    if (_room?.localParticipant != null) {
+      try {
+        final isEnabled = !_room!.localParticipant!.isMicrophoneEnabled();
+        await _room!.localParticipant!.setMicrophoneEnabled(isEnabled);
+        
+        setState(() => _isMuted = !isEnabled);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(isEnabled ? 'Microphone enabled' : 'Microphone disabled'),
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        }
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to toggle microphone: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } else {
+      // Fallback when room not available
+      setState(() => _isMuted = !_isMuted);
+    }
+  }
+  
+  Future<void> _toggleCamera() async {
+    if (_room?.localParticipant != null) {
+      try {
+        final isEnabled = !_room!.localParticipant!.isCameraEnabled();
+        await _room!.localParticipant!.setCameraEnabled(isEnabled);
+        
+        setState(() => _isVideoOff = !isEnabled);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(isEnabled ? 'Camera enabled' : 'Camera disabled'),
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        }
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to toggle camera: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } else {
+      // Fallback when room not available
+      setState(() => _isVideoOff = !_isVideoOff);
+    }
+  }
+  
+  Future<void> _toggleScreenShare() async {
+    if (_room?.localParticipant != null) {
+      try {
+        final isSharing = _room!.localParticipant!.isScreenShareEnabled();
+        await _room!.localParticipant!.setScreenShareEnabled(!isSharing);
+        
+        setState(() => _isScreenSharing = !isSharing);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(!isSharing ? 'Screen sharing started' : 'Screen sharing stopped'),
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        }
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to toggle screen share: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } else {
+      // Fallback when room not available
+      setState(() => _isScreenSharing = !_isScreenSharing);
+    }
+  }
+  
+  void _toggleSpeaker() {
+    // Speaker toggle is typically handled at the hardware/OS level
+    // For LiveKit, this would control audio output device selection
+    setState(() => _isSpeakerOn = !_isSpeakerOn);
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_isSpeakerOn ? 'Speaker enabled' : 'Speaker disabled'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,40 +187,38 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
         },
         child: Stack(
           children: [
-            // Participant Grid - TODO: Integrate with actual LiveKit
+            // Participant Grid
             Positioned.fill(
-              child: Container(
-                color: Colors.black,
-                child: const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.videocam,
-                        size: 64,
-                        color: Colors.white54,
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'Meeting Room',
-                        style: TextStyle(
-                          color: Colors.white54,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w500,
+              child: _room != null 
+                  ? ParticipantGrid(room: _room!)
+                  : Container(
+                      color: Colors.black,
+                      child: const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.videocam,
+                              size: 64,
+                              color: Colors.white54,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Connecting to meeting...',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            CircularProgressIndicator(
+                              color: Color(0xFF25D366),
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        'LiveKit integration pending',
-                        style: TextStyle(
-                          color: Colors.white30,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                    ),
             ),
             
             // Top Bar (Meeting Info)
@@ -282,21 +393,21 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
             _buildControlButton(
               icon: _isMuted ? Icons.mic_off : Icons.mic,
               isActive: !_isMuted,
-              onPressed: () => setState(() => _isMuted = !_isMuted),
+              onPressed: _toggleMicrophone,
             ),
             
             // Video On/Off
             _buildControlButton(
               icon: _isVideoOff ? Icons.videocam_off : Icons.videocam,
               isActive: !_isVideoOff,
-              onPressed: () => setState(() => _isVideoOff = !_isVideoOff),
+              onPressed: _toggleCamera,
             ),
             
             // Screen Share
             _buildControlButton(
               icon: _isScreenSharing ? Icons.stop_screen_share : Icons.screen_share,
               isActive: _isScreenSharing,
-              onPressed: () => setState(() => _isScreenSharing = !_isScreenSharing),
+              onPressed: _toggleScreenShare,
               isSpecial: _isScreenSharing,
             ),
             
@@ -304,7 +415,7 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
             _buildControlButton(
               icon: _isSpeakerOn ? Icons.volume_up : Icons.volume_off,
               isActive: _isSpeakerOn,
-              onPressed: () => setState(() => _isSpeakerOn = !_isSpeakerOn),
+              onPressed: _toggleSpeaker,
             ),
             
             // Leave Meeting
@@ -568,8 +679,22 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
     );
   }
 
-  void _leaveMeeting() {
-    // TODO: Implement actual meeting leave with LiveKit
-    context.pop();
+  Future<void> _leaveMeeting() async {
+    try {
+      // Disconnect from LiveKit room
+      await _room?.disconnect();
+      _room?.dispose();
+      _room = null;
+      
+      // Navigate back
+      if (mounted) {
+        context.pop();
+      }
+    } catch (error) {
+      // Still navigate back even if there's an error disconnecting
+      if (mounted) {
+        context.pop();
+      }
+    }
   }
 }

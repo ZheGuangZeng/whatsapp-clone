@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-// Removed unused livekit import
+
+import '../../features/meetings/presentation/widgets/camera_preview.dart';
 
 /// Meeting lobby page with preview and settings
 class MeetingLobbyPage extends ConsumerStatefulWidget {
@@ -59,7 +60,11 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
                   width: 1,
                 ),
               ),
-              child: _buildCameraPreview(),
+              child: CameraPreview(
+                isEnabled: _isCameraEnabled,
+                onCameraToggle: () => setState(() => _isCameraEnabled = !_isCameraEnabled),
+                onCameraSwitch: _switchCamera,
+              ),
             ),
           ),
           
@@ -188,97 +193,6 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
     );
   }
 
-  Widget _buildCameraPreview() {
-    if (!_isCameraEnabled) {
-      return Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[800],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.videocam_off,
-              size: 48,
-              color: Colors.white54,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Camera is off',
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // TODO: Implement actual camera preview using LiveKit
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.blue.withValues(alpha: 0.3),
-            Colors.green.withValues(alpha: 0.3),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Stack(
-        children: [
-          const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.person,
-                  size: 64,
-                  color: Colors.white54,
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Camera Preview',
-                  style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(
-                  '(Will show actual feed in production)',
-                  style: TextStyle(
-                    color: Colors.white30,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Mirror toggle (for front camera)
-          Positioned(
-            top: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.flip_camera_ios,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildControlButton({
     required IconData icon,
