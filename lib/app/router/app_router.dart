@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../features/auth/presentation/providers/auth_providers.dart';
-import '../../features/auth/presentation/providers/auth_state.dart';
-import '../../features/auth/presentation/pages/login_page.dart';
-import '../../features/auth/presentation/pages/register_page.dart';
-import '../../features/auth/presentation/pages/verification_page.dart';
-import '../../features/auth/presentation/pages/profile_page.dart';
-import '../../features/chat/presentation/pages/chat_list_page.dart';
-import '../../features/chat/presentation/pages/chat_room_page.dart';
-import '../pages/splash_page.dart';
-import '../pages/onboarding_page.dart';
-import '../pages/home_page.dart';
 import '../pages/calls_page.dart';
-import '../pages/settings_page.dart';
+import '../pages/home_page.dart';
 import '../pages/meeting_lobby_page.dart';
 import '../pages/meeting_room_page.dart';
+import '../pages/onboarding_page.dart';
+import '../pages/settings_page.dart';
+import '../pages/splash_page.dart';
+import '../../features/auth/presentation/pages/login_page.dart';
+import '../../features/auth/presentation/pages/profile_page.dart';
+import '../../features/auth/presentation/pages/register_page.dart';
+import '../../features/auth/presentation/pages/verification_page.dart';
+import '../../features/auth/presentation/providers/auth_providers.dart';
+import '../../features/auth/presentation/providers/auth_state.dart';
+import '../../features/chat/presentation/pages/chat_list_page.dart';
+import '../../features/chat/presentation/pages/chat_room_page.dart';
 
 /// Global navigation key for programmatic navigation
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

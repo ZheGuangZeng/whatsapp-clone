@@ -343,7 +343,7 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
               trailing: Switch(
                 value: false,
                 onChanged: (value) => Navigator.pop(context),
-                activeColor: const Color(0xFF25D366),
+                activeTrackColor: const Color(0xFF25D366),
               ),
             ),
             ListTile(
@@ -355,7 +355,7 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
               trailing: Switch(
                 value: true,
                 onChanged: (value) => Navigator.pop(context),
-                activeColor: const Color(0xFF25D366),
+                activeTrackColor: const Color(0xFF25D366),
               ),
             ),
           ],

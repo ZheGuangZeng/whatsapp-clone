@@ -19,7 +19,7 @@ void main() {
       registerFallbackValue(CreateMeetingParams(
         title: 'Test Meeting',
         hostId: 'test-host',
-        settings: MeetingSettings.openMeeting(),
+        settings: const MeetingSettings.openMeeting(),
       ));
     });
 
@@ -35,8 +35,8 @@ void main() {
           title: 'Team Standup',
           description: 'Daily standup meeting',
           hostId: 'user-123',
-          scheduledStartTime: DateTime.now().add(Duration(hours: 1)),
-          settings: MeetingSettings.openMeeting(),
+          scheduledStartTime: DateTime.now().add(const Duration(hours: 1)),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         final expectedMeeting = Meeting(
@@ -69,7 +69,7 @@ void main() {
         final params = CreateMeetingParams(
           title: 'Instant Meeting',
           hostId: 'user-456',
-          settings: MeetingSettings.openMeeting(),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         final expectedMeeting = Meeting(
@@ -140,7 +140,7 @@ void main() {
         final params = CreateMeetingParams(
           title: '',
           hostId: 'user-123',
-          settings: MeetingSettings.openMeeting(),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         // Act
@@ -158,7 +158,7 @@ void main() {
         final params = CreateMeetingParams(
           title: 'Valid Title',
           hostId: '',
-          settings: MeetingSettings.openMeeting(),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         // Act
@@ -176,8 +176,8 @@ void main() {
         final params = CreateMeetingParams(
           title: 'Past Meeting',
           hostId: 'user-123',
-          scheduledStartTime: DateTime.now().subtract(Duration(hours: 1)),
-          settings: MeetingSettings.openMeeting(),
+          scheduledStartTime: DateTime.now().subtract(const Duration(hours: 1)),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         // Act
@@ -196,7 +196,7 @@ void main() {
         final params = CreateMeetingParams(
           title: longTitle,
           hostId: 'user-123',
-          settings: MeetingSettings.openMeeting(),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         // Act
@@ -216,7 +216,7 @@ void main() {
           title: 'Valid Title',
           description: longDescription,
           hostId: 'user-123',
-          settings: MeetingSettings.openMeeting(),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         // Act
@@ -236,7 +236,7 @@ void main() {
         final params = CreateMeetingParams(
           title: 'Valid Meeting',
           hostId: 'user-123',
-          settings: MeetingSettings.openMeeting(),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         final failure = ServerFailure(message: 'Failed to create meeting room');
@@ -257,7 +257,7 @@ void main() {
         final params = CreateMeetingParams(
           title: 'Network Test Meeting',
           hostId: 'user-123',
-          settings: MeetingSettings.openMeeting(),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         final failure = NetworkFailure(message: 'No internet connection');
@@ -278,7 +278,7 @@ void main() {
         final params = CreateMeetingParams(
           title: 'Service Failure Test',
           hostId: 'user-123',
-          settings: MeetingSettings.openMeeting(),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         final failure = ServiceFailure('LiveKit room creation failed');
@@ -323,7 +323,7 @@ void main() {
         final params = CreateMeetingParams(
           title: 'Meeting<script>alert("xss")</script>',
           hostId: 'user-123',
-          settings: MeetingSettings.openMeeting(),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         final expectedMeeting = Meeting(
@@ -354,7 +354,7 @@ void main() {
         final params = CreateMeetingParams(
           title: 'Concurrent Test',
           hostId: 'user-123',
-          settings: MeetingSettings.openMeeting(),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         final failure = ConflictFailure('Room ID already exists');
@@ -377,7 +377,7 @@ void main() {
         final params = CreateMeetingParams(
           title: 'State Test Meeting',
           hostId: 'user-123',
-          settings: MeetingSettings.openMeeting(),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         final expectedMeeting = Meeting(
@@ -409,13 +409,13 @@ void main() {
         final params1 = CreateMeetingParams(
           title: 'Meeting One',
           hostId: 'user-123',
-          settings: MeetingSettings.openMeeting(),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         final params2 = CreateMeetingParams(
           title: 'Meeting Two',
           hostId: 'user-123',
-          settings: MeetingSettings.openMeeting(),
+          settings: const MeetingSettings.openMeeting(),
         );
 
         final meeting1 = Meeting(

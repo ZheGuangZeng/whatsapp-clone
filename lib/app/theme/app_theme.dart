@@ -352,10 +352,10 @@ class AppTheme {
   static BoxDecoration outgoingMessageDecoration = BoxDecoration(
     color: outgoingMessageColor,
     borderRadius: const BorderRadius.only(
-      topLeft: const Radius.circular(18),
-      topRight: const Radius.circular(18),
-      bottomLeft: const Radius.circular(18),
-      bottomRight: const Radius.circular(4),
+      topLeft: Radius.circular(18),
+      topRight: Radius.circular(18),
+      bottomLeft: Radius.circular(18),
+      bottomRight: Radius.circular(4),
     ),
   );
 
