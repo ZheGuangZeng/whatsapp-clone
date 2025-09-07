@@ -42,10 +42,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       switch (next) {
         case AuthenticatedState():
-          context.go('/home');
+          context.go('/chats');
           break;
         case VerificationRequiredState(:final email, :final phone):
-          context.push('/verify', extra: {
+          context.push('/auth/verify', extra: {
             'email': email,
             'phone': phone,
           });
@@ -195,7 +195,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                 // Forgot Password Link
                 TextButton(
-                  onPressed: () => context.push('/forgot-password'),
+                  onPressed: () => context.push('/auth/forgot-password'),
                   child: const Text('Forgot Password?'),
                 ),
                 const SizedBox(height: 24),
@@ -209,7 +209,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                     TextButton(
-                      onPressed: () => context.push('/register'),
+                      onPressed: () => context.push('/auth/register'),
                       child: const Text(
                         'Sign Up',
                         style: TextStyle(fontWeight: FontWeight.w600),

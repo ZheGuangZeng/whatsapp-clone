@@ -46,10 +46,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       switch (next) {
         case AuthenticatedState():
-          context.go('/home');
+          context.go('/chats');
           break;
         case VerificationRequiredState(:final email, :final phone):
-          context.push('/verify', extra: {
+          context.push('/auth/verify', extra: {
             'email': email,
             'phone': phone,
           });

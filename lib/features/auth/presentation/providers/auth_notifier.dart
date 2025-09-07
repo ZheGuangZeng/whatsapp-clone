@@ -5,6 +5,7 @@ import '../../domain/entities/auth_session.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/refresh_token_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
+import '../../domain/usecases/send_password_reset_usecase.dart';
 import '../../domain/usecases/verify_email_usecase.dart';
 import 'auth_providers.dart';
 import 'auth_state.dart';
@@ -32,43 +33,51 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Get current session on app start
   Future<void> _getCurrentSession() async {
-    state = state.copyWith(isLoading: true);
-    
-    final useCase = _ref.read(getCurrentSessionUseCaseProvider);
-    final result = await useCase.call();
-    
-    result.when(
-      success: (session) {
-        if (session != null) {
-          state = AuthState.authenticated(session);
-          _scheduleTokenRefresh(session);
-        } else {
-          state = const AuthState.unauthenticated();
-        }
-      },
-      failure: (failure) {
-        state = AuthState.error(failure.message);
-      },
-    );
+    try {
+      state = state.copyWith(isLoading: true);
+      
+      final useCase = await _ref.read(getCurrentSessionUseCaseProvider.future);
+      final result = await useCase.call();
+      
+      result.when(
+        success: (session) {
+          if (session != null) {
+            state = AuthState.authenticated(session);
+            _scheduleTokenRefresh(session);
+          } else {
+            state = const AuthState.unauthenticated();
+          }
+        },
+        failure: (failure) {
+          state = AuthState.error(failure.message);
+        },
+      );
+    } catch (error) {
+      state = AuthState.error('Failed to initialize auth: $error');
+    }
   }
 
   /// Listen to auth state changes from Supabase
-  void _listenToAuthChanges() {
-    final repository = _ref.read(authRepositoryProvider);
-    _authSubscription = repository.authStateChanges.listen(
-      (session) {
-        if (session != null) {
-          state = AuthState.authenticated(session);
-          _scheduleTokenRefresh(session);
-        } else {
-          state = const AuthState.unauthenticated();
-          _cancelTokenRefresh();
-        }
-      },
-      onError: (error) {
-        state = AuthState.error(error.toString());
-      },
-    );
+  Future<void> _listenToAuthChanges() async {
+    try {
+      final repository = await _ref.read(authRepositoryProvider.future);
+      _authSubscription = repository.authStateChanges.listen(
+        (session) {
+          if (session != null) {
+            state = AuthState.authenticated(session);
+            _scheduleTokenRefresh(session);
+          } else {
+            state = const AuthState.unauthenticated();
+            _cancelTokenRefresh();
+          }
+        },
+        onError: (Object error) {
+          state = AuthState.error(error.toString());
+        },
+      );
+    } catch (error) {
+      state = AuthState.error('Failed to listen to auth changes: $error');
+    }
   }
 
   /// Login with email or phone
@@ -77,29 +86,36 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String? phone,
     required String password,
   }) async {
-    state = state.copyWith(isLoading: true, error: null);
+    try {
+      state = state.copyWith(isLoading: true, error: null);
 
-    final useCase = _ref.read(loginUseCaseProvider);
-    final params = LoginParams(
-      email: email,
-      phone: phone,
-      password: password,
-    );
+      final useCase = await _ref.read(loginUseCaseProvider.future);
+      final params = LoginParams(
+        email: email,
+        phone: phone,
+        password: password,
+      );
 
-    final result = await useCase.call(params);
+      final result = await useCase.call(params);
 
-    result.when(
-      success: (session) {
-        state = AuthState.authenticated(session);
-        _scheduleTokenRefresh(session);
-      },
-      failure: (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          error: failure.message,
-        );
-      },
-    );
+      result.when(
+        success: (session) {
+          state = AuthState.authenticated(session);
+          _scheduleTokenRefresh(session);
+        },
+        failure: (failure) {
+          state = state.copyWith(
+            isLoading: false,
+            error: failure.message,
+          );
+        },
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Login failed: $error',
+      );
+    }
   }
 
   /// Register with email or phone
@@ -109,39 +125,46 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String password,
     required String displayName,
   }) async {
-    state = state.copyWith(isLoading: true, error: null);
+    try {
+      state = state.copyWith(isLoading: true, error: null);
 
-    final useCase = _ref.read(registerUseCaseProvider);
-    final params = RegisterParams(
-      email: email,
-      phone: phone,
-      password: password,
-      displayName: displayName,
-    );
+      final useCase = await _ref.read(registerUseCaseProvider.future);
+      final params = RegisterParams(
+        email: email,
+        phone: phone,
+        password: password,
+        displayName: displayName,
+      );
 
-    final result = await useCase.call(params);
+      final result = await useCase.call(params);
 
-    result.when(
-      success: (session) {
-        // Check if this is a complete session or needs verification
-        if (session.accessToken.isNotEmpty) {
-          state = AuthState.authenticated(session);
-          _scheduleTokenRefresh(session);
-        } else {
-          state = AuthState.verificationRequired(
-            email: email,
-            phone: phone,
-            tempSession: session,
+      result.when(
+        success: (session) {
+          // Check if this is a complete session or needs verification
+          if (session.accessToken.isNotEmpty) {
+            state = AuthState.authenticated(session);
+            _scheduleTokenRefresh(session);
+          } else {
+            state = AuthState.verificationRequired(
+              email: email,
+              phone: phone,
+              tempSession: session,
+            );
+          }
+        },
+        failure: (failure) {
+          state = state.copyWith(
+            isLoading: false,
+            error: failure.message,
           );
-        }
-      },
-      failure: (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          error: failure.message,
-        );
-      },
-    );
+        },
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Registration failed: $error',
+      );
+    }
   }
 
   /// Verify email with OTP
@@ -149,43 +172,86 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String email,
     required String otp,
   }) async {
-    state = state.copyWith(isLoading: true, error: null);
+    try {
+      state = state.copyWith(isLoading: true, error: null);
 
-    final useCase = _ref.read(verifyEmailUseCaseProvider);
-    final params = VerifyEmailParams(email: email, otp: otp);
+      final useCase = await _ref.read(verifyEmailUseCaseProvider.future);
+      final params = VerifyEmailParams(email: email, otp: otp);
 
-    final result = await useCase.call(params);
+      final result = await useCase.call(params);
 
-    result.when(
-      success: (session) {
-        state = AuthState.authenticated(session);
-        _scheduleTokenRefresh(session);
-      },
-      failure: (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          error: failure.message,
-        );
-      },
-    );
+      result.when(
+        success: (session) {
+          state = AuthState.authenticated(session);
+          _scheduleTokenRefresh(session);
+        },
+        failure: (failure) {
+          state = state.copyWith(
+            isLoading: false,
+            error: failure.message,
+          );
+        },
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Email verification failed: $error',
+      );
+    }
+  }
+
+  /// Send password reset email
+  Future<void> sendPasswordReset({required String email}) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+
+      final useCase = await _ref.read(sendPasswordResetUseCaseProvider.future);
+      final params = SendPasswordResetParams(email: email);
+
+      final result = await useCase.call(params);
+
+      result.when(
+        success: (_) {
+          state = state.copyWith(
+            isLoading: false,
+            error: null, // Success message could be handled differently
+          );
+        },
+        failure: (failure) {
+          state = state.copyWith(
+            isLoading: false,
+            error: failure.message,
+          );
+        },
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Password reset failed: $error',
+      );
+    }
   }
 
   /// Logout current user
   Future<void> logout() async {
-    state = state.copyWith(isLoading: true);
+    try {
+      state = state.copyWith(isLoading: true);
 
-    final useCase = _ref.read(logoutUseCaseProvider);
-    final result = await useCase.call();
+      final useCase = await _ref.read(logoutUseCaseProvider.future);
+      final result = await useCase.call();
 
-    result.when(
-      success: (_) {
-        state = const AuthState.unauthenticated();
-        _cancelTokenRefresh();
-      },
-      failure: (failure) {
-        state = AuthState.error(failure.message);
-      },
-    );
+      result.when(
+        success: (_) {
+          state = const AuthState.unauthenticated();
+          _cancelTokenRefresh();
+        },
+        failure: (failure) {
+          state = AuthState.error(failure.message);
+        },
+      );
+    } catch (error) {
+      state = AuthState.error('Logout failed: $error');
+    }
   }
 
   /// Clear any error state
@@ -219,24 +285,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Refresh the access token
   Future<void> _refreshToken(String refreshToken) async {
-    final useCase = _ref.read(refreshTokenUseCaseProvider);
-    final params = RefreshTokenParams(refreshToken: refreshToken);
+    try {
+      final useCase = await _ref.read(refreshTokenUseCaseProvider.future);
+      final params = RefreshTokenParams(refreshToken: refreshToken);
 
-    final result = await useCase.call(params);
+      final result = await useCase.call(params);
 
-    result.when(
-      success: (session) {
-        if (state is AuthenticatedState) {
-          state = AuthState.authenticated(session);
-          _scheduleTokenRefresh(session);
-        }
-      },
-      failure: (failure) {
-        // If refresh fails, logout the user
-        state = const AuthState.unauthenticated();
-        _cancelTokenRefresh();
-      },
-    );
+      result.when(
+        success: (session) {
+          if (state is AuthenticatedState) {
+            state = AuthState.authenticated(session);
+            _scheduleTokenRefresh(session);
+          }
+        },
+        failure: (failure) {
+          // If refresh fails, logout the user
+          state = const AuthState.unauthenticated();
+          _cancelTokenRefresh();
+        },
+      );
+    } catch (error) {
+      // If refresh fails due to service error, logout the user
+      state = const AuthState.unauthenticated();
+      _cancelTokenRefresh();
+    }
   }
 
   /// Cancel the token refresh timer

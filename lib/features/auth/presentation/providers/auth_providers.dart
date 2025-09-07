@@ -1,10 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import '../../../../core/providers/supabase_provider.dart';
+import '../../../../core/providers/service_providers.dart';
 import '../../data/datasources/auth_local_datasource.dart';
-import '../../data/datasources/auth_remote_datasource.dart';
-import '../../data/repositories/auth_repository.dart';
 import '../../domain/repositories/i_auth_repository.dart';
 import '../../domain/usecases/get_current_session_usecase.dart';
 import '../../domain/usecases/login_usecase.dart';
@@ -12,6 +10,7 @@ import '../../domain/usecases/logout_usecase.dart';
 import '../../domain/usecases/refresh_token_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 import '../../domain/usecases/verify_email_usecase.dart';
+import '../../domain/usecases/send_password_reset_usecase.dart';
 import 'auth_notifier.dart';
 import 'auth_state.dart';
 
@@ -33,53 +32,51 @@ final authLocalDataSourceProvider = Provider<AuthLocalDataSource>((ref) {
   return AuthLocalDataSource(secureStorage);
 });
 
-/// Provider for auth remote data source
-final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
-  final supabase = ref.watch(supabaseClientProvider);
-  return AuthRemoteDataSource(supabase);
-});
-
-/// Provider for auth repository
-final authRepositoryProvider = Provider<IAuthRepository>((ref) {
-  final remoteDataSource = ref.watch(authRemoteDataSourceProvider);
-  final localDataSource = ref.watch(authLocalDataSourceProvider);
-  return AuthRepository(remoteDataSource, localDataSource);
+/// Provider for auth repository using service factory
+final authRepositoryProvider = FutureProvider<IAuthRepository>((ref) async {
+  return ref.watch(authServiceProvider.future);
 });
 
 /// Provider for login use case
-final loginUseCaseProvider = Provider<LoginUseCase>((ref) {
-  final repository = ref.watch(authRepositoryProvider);
+final loginUseCaseProvider = FutureProvider<LoginUseCase>((ref) async {
+  final repository = await ref.watch(authRepositoryProvider.future);
   return LoginUseCase(repository);
 });
 
 /// Provider for register use case
-final registerUseCaseProvider = Provider<RegisterUseCase>((ref) {
-  final repository = ref.watch(authRepositoryProvider);
+final registerUseCaseProvider = FutureProvider<RegisterUseCase>((ref) async {
+  final repository = await ref.watch(authRepositoryProvider.future);
   return RegisterUseCase(repository);
 });
 
 /// Provider for logout use case
-final logoutUseCaseProvider = Provider<LogoutUseCase>((ref) {
-  final repository = ref.watch(authRepositoryProvider);
+final logoutUseCaseProvider = FutureProvider<LogoutUseCase>((ref) async {
+  final repository = await ref.watch(authRepositoryProvider.future);
   return LogoutUseCase(repository);
 });
 
 /// Provider for verify email use case
-final verifyEmailUseCaseProvider = Provider<VerifyEmailUseCase>((ref) {
-  final repository = ref.watch(authRepositoryProvider);
+final verifyEmailUseCaseProvider = FutureProvider<VerifyEmailUseCase>((ref) async {
+  final repository = await ref.watch(authRepositoryProvider.future);
   return VerifyEmailUseCase(repository);
 });
 
 /// Provider for refresh token use case
-final refreshTokenUseCaseProvider = Provider<RefreshTokenUseCase>((ref) {
-  final repository = ref.watch(authRepositoryProvider);
+final refreshTokenUseCaseProvider = FutureProvider<RefreshTokenUseCase>((ref) async {
+  final repository = await ref.watch(authRepositoryProvider.future);
   return RefreshTokenUseCase(repository);
 });
 
 /// Provider for get current session use case
-final getCurrentSessionUseCaseProvider = Provider<GetCurrentSessionUseCase>((ref) {
-  final repository = ref.watch(authRepositoryProvider);
+final getCurrentSessionUseCaseProvider = FutureProvider<GetCurrentSessionUseCase>((ref) async {
+  final repository = await ref.watch(authRepositoryProvider.future);
   return GetCurrentSessionUseCase(repository);
+});
+
+/// Provider for send password reset use case
+final sendPasswordResetUseCaseProvider = FutureProvider<SendPasswordResetUseCase>((ref) async {
+  final repository = await ref.watch(authRepositoryProvider.future);
+  return SendPasswordResetUseCase(repository);
 });
 
 /// Provider for auth state notifier

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/profile_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
@@ -68,6 +69,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: 'profile-setup',
             name: 'profile-setup',
             builder: (context, state) => const ProfilePage(),
+          ),
+          GoRoute(
+            path: 'forgot-password',
+            name: 'forgot-password',
+            builder: (context, state) => const ForgotPasswordPage(),
           ),
         ],
       ),
