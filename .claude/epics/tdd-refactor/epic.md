@@ -1,8 +1,9 @@
 ---
 name: tdd-refactor
-status: backlog
+status: completed
 created: 2025-09-06T13:56:23Z
-progress: 0%
+progress: 100%
+completed: 2025-09-07T09:40:00Z
 prd: .claude/prds/tdd-refactor.md
 github: https://github.com/ZheGuangZeng/whatsapp-clone/issues/12
 ---
