@@ -6,12 +6,12 @@ import 'package:go_router/go_router.dart';
 
 /// Main app shell with bottom navigation
 class HomePage extends ConsumerWidget {
-  final Widget child;
-  
   const HomePage({
     required this.child,
     super.key,
   });
+
+  final Widget child;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
