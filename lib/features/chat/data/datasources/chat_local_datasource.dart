@@ -1,9 +1,10 @@
 import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/chat_message_model.dart';
-import '../models/room_model.dart';
 import '../models/message_thread_model.dart';
+import '../models/room_model.dart';
 
 /// Local data source for chat data using SharedPreferences for caching
 class ChatLocalDataSource {

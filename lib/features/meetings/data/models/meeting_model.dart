@@ -1,8 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import '../../domain/entities/meeting.dart';
-import '../../domain/entities/meeting_participant.dart';
-import '../../domain/entities/meeting_settings.dart';
 import '../../domain/entities/meeting_state.dart';
 import 'meeting_participant_model.dart';
 import 'meeting_settings_model.dart';
@@ -27,48 +25,9 @@ class MeetingModel {
     required this.participants,
   });
 
-  /// Unique identifier for the meeting
-  final String id;
-  
-  /// Title of the meeting
-  final String title;
-  
-  /// Optional description of the meeting
-  final String? description;
-  
-  /// ID of the user who is hosting the meeting
-  final String hostId;
-  
-  /// ID of the room/channel where the meeting takes place
-  final String roomId;
-  
-  /// When the meeting was created
-  final DateTime createdAt;
-  
-  /// When the meeting is scheduled to start (optional for instant meetings)
-  final DateTime? scheduledStartTime;
-  
-  /// When the meeting actually started
-  final DateTime? actualStartTime;
-  
-  /// When the meeting actually ended
-  final DateTime? actualEndTime;
-  
-  /// Current state of the meeting
-  final MeetingState state;
-  
-  /// Meeting configuration settings
-  final MeetingSettingsModel settings;
-  
-  /// List of participants in the meeting
-  final List<MeetingParticipantModel> participants;
-
   /// Creates a MeetingModel from JSON map
   factory MeetingModel.fromJson(Map<String, dynamic> json) =>
       _$MeetingModelFromJson(json);
-
-  /// Converts MeetingModel to JSON map
-  Map<String, dynamic> toJson() => _$MeetingModelToJson(this);
 
   /// Creates a MeetingModel from Supabase row
   factory MeetingModel.fromSupabaseRow(
@@ -110,6 +69,65 @@ class MeetingModel {
     );
   }
 
+  /// Creates a MeetingModel from domain entity
+  factory MeetingModel.fromDomain(Meeting meeting) {
+    return MeetingModel(
+      id: meeting.id,
+      title: meeting.title,
+      description: meeting.description,
+      hostId: meeting.hostId,
+      roomId: meeting.roomId,
+      createdAt: meeting.createdAt,
+      scheduledStartTime: meeting.scheduledStartTime,
+      actualStartTime: meeting.actualStartTime,
+      actualEndTime: meeting.actualEndTime,
+      state: meeting.state,
+      settings: MeetingSettingsModel.fromDomain(meeting.settings),
+      participants: meeting.participants
+          .map((p) => MeetingParticipantModel.fromDomain(p))
+          .toList(),
+    );
+  }
+
+  /// Unique identifier for the meeting
+  final String id;
+  
+  /// Title of the meeting
+  final String title;
+  
+  /// Optional description of the meeting
+  final String? description;
+  
+  /// ID of the user who is hosting the meeting
+  final String hostId;
+  
+  /// ID of the room/channel where the meeting takes place
+  final String roomId;
+  
+  /// When the meeting was created
+  final DateTime createdAt;
+  
+  /// When the meeting is scheduled to start (optional for instant meetings)
+  final DateTime? scheduledStartTime;
+  
+  /// When the meeting actually started
+  final DateTime? actualStartTime;
+  
+  /// When the meeting actually ended
+  final DateTime? actualEndTime;
+  
+  /// Current state of the meeting
+  final MeetingState state;
+  
+  /// Meeting configuration settings
+  final MeetingSettingsModel settings;
+  
+  /// List of participants in the meeting
+  final List<MeetingParticipantModel> participants;
+
+  /// Converts MeetingModel to JSON map
+  Map<String, dynamic> toJson() => _$MeetingModelToJson(this);
+
   /// Converts to Supabase row format
   Map<String, dynamic> toSupabaseRow() {
     return {
@@ -132,26 +150,6 @@ class MeetingModel {
       'require_approval': settings.requireApproval,
       'password': settings.password,
     };
-  }
-
-  /// Creates a MeetingModel from domain entity
-  factory MeetingModel.fromDomain(Meeting meeting) {
-    return MeetingModel(
-      id: meeting.id,
-      title: meeting.title,
-      description: meeting.description,
-      hostId: meeting.hostId,
-      roomId: meeting.roomId,
-      createdAt: meeting.createdAt,
-      scheduledStartTime: meeting.scheduledStartTime,
-      actualStartTime: meeting.actualStartTime,
-      actualEndTime: meeting.actualEndTime,
-      state: meeting.state,
-      settings: MeetingSettingsModel.fromDomain(meeting.settings),
-      participants: meeting.participants
-          .map((p) => MeetingParticipantModel.fromDomain(p))
-          .toList(),
-    );
   }
 
   /// Converts to domain entity

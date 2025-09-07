@@ -36,7 +36,7 @@ void main() {
     const testContent = 'Hello, World!';
     final testTimestamp = DateTime(2024, 1, 15, 10, 30);
 
-    final testParams = SendMessageParams(
+    const testParams = SendMessageParams(
       senderId: testSenderId,
       roomId: testRoomId,
       content: testContent,

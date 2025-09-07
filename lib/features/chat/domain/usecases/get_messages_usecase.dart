@@ -31,7 +31,7 @@ class GetMessagesUseCase implements UseCase<List<ChatMessage>, GetMessagesParams
     }
 
     if (params.limit > maxLimit) {
-      return ResultFailure(
+      return const ResultFailure(
         ValidationFailure(message: 'Limit cannot exceed $maxLimit'),
       );
     }

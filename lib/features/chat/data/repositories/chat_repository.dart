@@ -6,7 +6,6 @@ import '../../domain/entities/message_thread.dart';
 import '../../domain/repositories/i_chat_repository.dart';
 import '../datasources/chat_local_datasource.dart';
 import '../datasources/chat_remote_datasource.dart';
-import '../models/chat_message_model.dart';
 
 /// Implementation of IChatRepository using remote and local data sources
 class ChatRepository implements IChatRepository {
@@ -137,7 +136,7 @@ class ChatRepository implements IChatRepository {
       // Get updated message to return
       // For now, create a simple success response
       // TODO: Get and return the updated message with reactions
-      return ResultFailure(const NotImplementedFailure('addReaction result not implemented'));
+      return const ResultFailure(NotImplementedFailure('addReaction result not implemented'));
     } catch (e) {
       return ResultFailure(ServerFailure(message: 'Failed to add reaction: $e'));
     }
@@ -159,7 +158,7 @@ class ChatRepository implements IChatRepository {
       // Get updated message to return
       // For now, create a simple success response  
       // TODO: Get and return the updated message with reactions
-      return ResultFailure(const NotImplementedFailure('removeReaction result not implemented'));
+      return const ResultFailure(NotImplementedFailure('removeReaction result not implemented'));
     } catch (e) {
       return ResultFailure(ServerFailure(message: 'Failed to remove reaction: $e'));
     }

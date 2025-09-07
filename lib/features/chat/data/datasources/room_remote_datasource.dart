@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/room_model.dart';
 import '../models/participant_model.dart';
+import '../models/room_model.dart';
 
 /// Remote data source for room operations using Supabase
 class RoomRemoteDataSource {

@@ -4,7 +4,6 @@ import '../../domain/entities/meeting.dart';
 import '../../domain/repositories/i_meeting_repository.dart';
 import '../datasources/meeting_remote_datasource.dart';
 import '../models/meeting_model.dart';
-import '../models/meeting_settings_model.dart';
 
 /// Implementation of meeting repository using remote data source
 class MeetingRepository implements IMeetingRepository {

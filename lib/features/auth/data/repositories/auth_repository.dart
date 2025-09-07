@@ -9,7 +9,6 @@ import '../../domain/repositories/i_auth_repository.dart';
 import '../datasources/auth_local_datasource.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../models/auth_session_model.dart';
-import '../models/user_model.dart';
 
 /// Implementation of authentication repository using Supabase
 class AuthRepository implements IAuthRepository {

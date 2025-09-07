@@ -18,6 +18,24 @@ class MeetingSettingsModel {
     this.password,
   });
 
+  /// Creates a MeetingSettingsModel from JSON map
+  factory MeetingSettingsModel.fromJson(Map<String, dynamic> json) =>
+      _$MeetingSettingsModelFromJson(json);
+
+  /// Creates a MeetingSettingsModel from domain entity
+  factory MeetingSettingsModel.fromDomain(MeetingSettings settings) {
+    return MeetingSettingsModel(
+      maxParticipants: settings.maxParticipants,
+      isRecordingEnabled: settings.isRecordingEnabled,
+      isWaitingRoomEnabled: settings.isWaitingRoomEnabled,
+      allowScreenShare: settings.allowScreenShare,
+      allowChat: settings.allowChat,
+      isPublic: settings.isPublic,
+      requireApproval: settings.requireApproval,
+      password: settings.password,
+    );
+  }
+
   /// Maximum number of participants allowed in the meeting
   final int maxParticipants;
   
@@ -42,26 +60,8 @@ class MeetingSettingsModel {
   /// Optional password to join the meeting
   final String? password;
 
-  /// Creates a MeetingSettingsModel from JSON map
-  factory MeetingSettingsModel.fromJson(Map<String, dynamic> json) =>
-      _$MeetingSettingsModelFromJson(json);
-
   /// Converts MeetingSettingsModel to JSON map
   Map<String, dynamic> toJson() => _$MeetingSettingsModelToJson(this);
-
-  /// Creates a MeetingSettingsModel from domain entity
-  factory MeetingSettingsModel.fromDomain(MeetingSettings settings) {
-    return MeetingSettingsModel(
-      maxParticipants: settings.maxParticipants,
-      isRecordingEnabled: settings.isRecordingEnabled,
-      isWaitingRoomEnabled: settings.isWaitingRoomEnabled,
-      allowScreenShare: settings.allowScreenShare,
-      allowChat: settings.allowChat,
-      isPublic: settings.isPublic,
-      requireApproval: settings.requireApproval,
-      password: settings.password,
-    );
-  }
 
   /// Converts to domain entity
   MeetingSettings toDomain() {

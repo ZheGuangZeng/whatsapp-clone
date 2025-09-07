@@ -197,7 +197,7 @@ void main() {
         userId: 'user_123',
         roomId: 'room_123',
         joinedAt: DateTime.now(),
-        permissions: ['read'],
+        permissions: const ['read'],
       );
       
       // Act

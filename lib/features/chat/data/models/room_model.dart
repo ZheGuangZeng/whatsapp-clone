@@ -16,6 +16,22 @@ class RoomModel extends Room {
     super.lastActivity,
   });
 
+  /// Create RoomModel from Room entity
+  factory RoomModel.fromEntity(Room entity) {
+    return RoomModel(
+      id: entity.id,
+      name: entity.name,
+      creatorId: entity.creatorId,
+      createdAt: entity.createdAt,
+      type: entity.type,
+      description: entity.description,
+      avatarUrl: entity.avatarUrl,
+      isActive: entity.isActive,
+      participantCount: entity.participantCount,
+      lastActivity: entity.lastActivity,
+    );
+  }
+
   /// Create RoomModel from JSON data
   factory RoomModel.fromJson(Map<String, dynamic> json) {
     if (json['id'] == null) {
@@ -61,22 +77,6 @@ class RoomModel extends Room {
       'participant_count': participantCount,
       'last_activity': lastActivity?.toIso8601String(),
     };
-  }
-
-  /// Create RoomModel from Room entity
-  factory RoomModel.fromEntity(Room entity) {
-    return RoomModel(
-      id: entity.id,
-      name: entity.name,
-      creatorId: entity.creatorId,
-      createdAt: entity.createdAt,
-      type: entity.type,
-      description: entity.description,
-      avatarUrl: entity.avatarUrl,
-      isActive: entity.isActive,
-      participantCount: entity.participantCount,
-      lastActivity: entity.lastActivity,
-    );
   }
 
   /// Convert RoomModel to Room entity

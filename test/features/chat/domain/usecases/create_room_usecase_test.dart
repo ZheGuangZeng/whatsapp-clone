@@ -138,7 +138,7 @@ void main() {
         description: any(named: 'description'),
         avatarUrl: any(named: 'avatarUrl'),
         initialParticipants: any(named: 'initialParticipants'),
-      )).thenAnswer((_) async => ResultFailure(failure));
+      )).thenAnswer((_) async => const ResultFailure(failure));
 
       // Act
       final result = await useCase(params);

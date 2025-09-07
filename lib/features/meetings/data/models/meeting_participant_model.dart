@@ -19,6 +19,42 @@ class MeetingParticipantModel {
     this.avatarUrl,
   });
 
+  /// Creates a MeetingParticipantModel from JSON map
+  factory MeetingParticipantModel.fromJson(Map<String, dynamic> json) =>
+      _$MeetingParticipantModelFromJson(json);
+
+  /// Creates a MeetingParticipantModel from Supabase participant row
+  factory MeetingParticipantModel.fromSupabaseRow(Map<String, dynamic> row) {
+    return MeetingParticipantModel(
+      userId: row['user_id'] as String,
+      displayName: row['display_name'] as String,
+      role: ParticipantRole.values.firstWhere(
+        (r) => r.name == row['role'],
+      ),
+      joinedAt: DateTime.parse(row['joined_at'] as String),
+      leftAt: row['left_at'] != null 
+          ? DateTime.parse(row['left_at'] as String) 
+          : null,
+      isAudioEnabled: row['is_audio_enabled'] as bool,
+      isVideoEnabled: row['is_video_enabled'] as bool,
+      avatarUrl: row['avatar_url'] as String?,
+    );
+  }
+
+  /// Creates a MeetingParticipantModel from domain entity
+  factory MeetingParticipantModel.fromDomain(MeetingParticipant participant) {
+    return MeetingParticipantModel(
+      userId: participant.userId,
+      displayName: participant.displayName,
+      role: participant.role,
+      joinedAt: participant.joinedAt,
+      leftAt: participant.leftAt,
+      isAudioEnabled: participant.isAudioEnabled,
+      isVideoEnabled: participant.isVideoEnabled,
+      avatarUrl: participant.avatarUrl,
+    );
+  }
+
   /// Unique identifier for the user
   final String userId;
   
@@ -43,30 +79,8 @@ class MeetingParticipantModel {
   /// URL to participant's avatar image
   final String? avatarUrl;
 
-  /// Creates a MeetingParticipantModel from JSON map
-  factory MeetingParticipantModel.fromJson(Map<String, dynamic> json) =>
-      _$MeetingParticipantModelFromJson(json);
-
   /// Converts MeetingParticipantModel to JSON map
   Map<String, dynamic> toJson() => _$MeetingParticipantModelToJson(this);
-
-  /// Creates a MeetingParticipantModel from Supabase participant row
-  factory MeetingParticipantModel.fromSupabaseRow(Map<String, dynamic> row) {
-    return MeetingParticipantModel(
-      userId: row['user_id'] as String,
-      displayName: row['display_name'] as String,
-      role: ParticipantRole.values.firstWhere(
-        (r) => r.name == row['role'],
-      ),
-      joinedAt: DateTime.parse(row['joined_at'] as String),
-      leftAt: row['left_at'] != null 
-          ? DateTime.parse(row['left_at'] as String) 
-          : null,
-      isAudioEnabled: row['is_audio_enabled'] as bool,
-      isVideoEnabled: row['is_video_enabled'] as bool,
-      avatarUrl: row['avatar_url'] as String?,
-    );
-  }
 
   /// Converts to Supabase row format
   Map<String, dynamic> toSupabaseRow() {
@@ -80,20 +94,6 @@ class MeetingParticipantModel {
       'is_video_enabled': isVideoEnabled,
       'avatar_url': avatarUrl,
     };
-  }
-
-  /// Creates a MeetingParticipantModel from domain entity
-  factory MeetingParticipantModel.fromDomain(MeetingParticipant participant) {
-    return MeetingParticipantModel(
-      userId: participant.userId,
-      displayName: participant.displayName,
-      role: participant.role,
-      joinedAt: participant.joinedAt,
-      leftAt: participant.leftAt,
-      isAudioEnabled: participant.isAudioEnabled,
-      isVideoEnabled: participant.isVideoEnabled,
-      avatarUrl: participant.avatarUrl,
-    );
   }
 
   /// Converts to domain entity

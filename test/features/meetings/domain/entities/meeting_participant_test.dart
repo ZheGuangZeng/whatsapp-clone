@@ -220,8 +220,8 @@ void main() {
     group('CopyWith Functionality', () {
       test('should create copy with updated fields', () {
         // Arrange
-        final newRole = ParticipantRole.moderator;
-        final newAudioStatus = false;
+        const newRole = ParticipantRole.moderator;
+        const newAudioStatus = false;
 
         // Act
         final updatedParticipant = testParticipant.copyWith(

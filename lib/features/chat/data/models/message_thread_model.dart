@@ -14,6 +14,20 @@ class MessageThreadModel extends MessageThread {
     super.participants = const [],
   });
 
+  /// Create MessageThreadModel from MessageThread entity
+  factory MessageThreadModel.fromEntity(MessageThread entity) {
+    return MessageThreadModel(
+      id: entity.id,
+      roomId: entity.roomId,
+      rootMessage: entity.rootMessage,
+      createdAt: entity.createdAt,
+      isActive: entity.isActive,
+      replyCount: entity.replyCount,
+      lastReply: entity.lastReply,
+      participants: entity.participants,
+    );
+  }
+
   /// Create MessageThreadModel from JSON data
   factory MessageThreadModel.fromJson(Map<String, dynamic> json) {
     if (json['id'] == null) {
@@ -55,20 +69,6 @@ class MessageThreadModel extends MessageThread {
       'last_reply': lastReply != null ? _messageToJson(lastReply!) : null,
       'participants': participants,
     };
-  }
-
-  /// Create MessageThreadModel from MessageThread entity
-  factory MessageThreadModel.fromEntity(MessageThread entity) {
-    return MessageThreadModel(
-      id: entity.id,
-      roomId: entity.roomId,
-      rootMessage: entity.rootMessage,
-      createdAt: entity.createdAt,
-      isActive: entity.isActive,
-      replyCount: entity.replyCount,
-      lastReply: entity.lastReply,
-      participants: entity.participants,
-    );
   }
 
   /// Convert MessageThreadModel to MessageThread entity

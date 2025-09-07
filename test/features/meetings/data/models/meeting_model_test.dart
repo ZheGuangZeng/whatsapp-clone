@@ -3,7 +3,6 @@ import 'package:whatsapp_clone/features/meetings/data/models/meeting_model.dart'
 import 'package:whatsapp_clone/features/meetings/data/models/meeting_participant_model.dart';
 import 'package:whatsapp_clone/features/meetings/data/models/meeting_settings_model.dart';
 import 'package:whatsapp_clone/features/meetings/domain/entities/meeting.dart';
-import 'package:whatsapp_clone/features/meetings/domain/entities/meeting_participant.dart';
 import 'package:whatsapp_clone/features/meetings/domain/entities/meeting_settings.dart';
 import 'package:whatsapp_clone/features/meetings/domain/entities/meeting_state.dart';
 import 'package:whatsapp_clone/features/meetings/domain/entities/participant_role.dart';

@@ -1,7 +1,7 @@
 import '../../../../core/utils/result.dart';
+import '../../../messaging/domain/entities/message.dart';
 import '../entities/chat_message.dart';
 import '../entities/message_thread.dart';
-import '../../../messaging/domain/entities/message.dart';
 
 /// Repository interface for chat-related operations
 abstract class IChatRepository {

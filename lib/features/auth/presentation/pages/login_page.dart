@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/auth_providers.dart';
 import '../providers/auth_state.dart';
-import '../widgets/auth_text_field.dart';
 import '../widgets/auth_button.dart';
+import '../widgets/auth_text_field.dart';
 
 /// Login page for email/phone authentication
 class LoginPage extends ConsumerStatefulWidget {

@@ -7,12 +7,12 @@ import 'package:go_router/go_router.dart';
 
 /// Meeting room page with participant grid and controls
 class MeetingRoomPage extends ConsumerStatefulWidget {
-  final String meetingId;
-  
   const MeetingRoomPage({
     required this.meetingId,
     super.key,
   });
+
+  final String meetingId;
 
   @override
   ConsumerState<MeetingRoomPage> createState() => _MeetingRoomPageState();
@@ -421,14 +421,14 @@ class _MeetingRoomPageState extends ConsumerState<MeetingRoomPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!isCurrentUser) ...[
-            Icon(
+            const Icon(
               Icons.mic,
               color: Colors.white70,
               size: 16,
             ),
             const SizedBox(width: 8),
           ],
-          Icon(
+          const Icon(
             Icons.videocam,
             color: Colors.white70,
             size: 16,

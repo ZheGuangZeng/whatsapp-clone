@@ -16,10 +16,10 @@ void main() {
     late MockMeetingRepository mockRepository;
 
     setUpAll(() {
-      registerFallbackValue(CreateMeetingParams(
+      registerFallbackValue(const CreateMeetingParams(
         title: 'Test Meeting',
         hostId: 'test-host',
-        settings: const MeetingSettings.openMeeting(),
+        settings: MeetingSettings.openMeeting(),
       ));
     });
 
@@ -66,10 +66,10 @@ void main() {
 
       test('should create instant meeting without scheduled start time', () async {
         // Arrange
-        final params = CreateMeetingParams(
+        const params = CreateMeetingParams(
           title: 'Instant Meeting',
           hostId: 'user-456',
-          settings: const MeetingSettings.openMeeting(),
+          settings: MeetingSettings.openMeeting(),
         );
 
         final expectedMeeting = Meeting(
@@ -97,14 +97,14 @@ void main() {
 
       test('should create meeting with custom settings', () async {
         // Arrange
-        final customSettings = MeetingSettings(
+        const customSettings = MeetingSettings(
           maxParticipants: 25,
           isRecordingEnabled: true,
           allowScreenShare: false,
           password: 'secure123',
         );
 
-        final params = CreateMeetingParams(
+        const params = CreateMeetingParams(
           title: 'Secure Meeting',
           hostId: 'user-789',
           settings: customSettings,
@@ -137,10 +137,10 @@ void main() {
     group('Validation Failures', () {
       test('should fail when title is empty', () async {
         // Arrange
-        final params = CreateMeetingParams(
+        const params = CreateMeetingParams(
           title: '',
           hostId: 'user-123',
-          settings: const MeetingSettings.openMeeting(),
+          settings: MeetingSettings.openMeeting(),
         );
 
         // Act
@@ -155,10 +155,10 @@ void main() {
 
       test('should fail when host ID is empty', () async {
         // Arrange
-        final params = CreateMeetingParams(
+        const params = CreateMeetingParams(
           title: 'Valid Title',
           hostId: '',
-          settings: const MeetingSettings.openMeeting(),
+          settings: MeetingSettings.openMeeting(),
         );
 
         // Act
@@ -233,15 +233,15 @@ void main() {
     group('Repository Failures', () {
       test('should return failure when repository fails to create meeting', () async {
         // Arrange
-        final params = CreateMeetingParams(
+        const params = CreateMeetingParams(
           title: 'Valid Meeting',
           hostId: 'user-123',
-          settings: const MeetingSettings.openMeeting(),
+          settings: MeetingSettings.openMeeting(),
         );
 
-        final failure = ServerFailure(message: 'Failed to create meeting room');
+        const failure = ServerFailure(message: 'Failed to create meeting room');
         when(() => mockRepository.createMeeting(params))
-            .thenAnswer((_) async => ResultFailure(failure));
+            .thenAnswer((_) async => const ResultFailure(failure));
 
         // Act
         final result = await useCase(params);
@@ -254,15 +254,15 @@ void main() {
 
       test('should return failure when network is unavailable', () async {
         // Arrange
-        final params = CreateMeetingParams(
+        const params = CreateMeetingParams(
           title: 'Network Test Meeting',
           hostId: 'user-123',
-          settings: const MeetingSettings.openMeeting(),
+          settings: MeetingSettings.openMeeting(),
         );
 
-        final failure = NetworkFailure(message: 'No internet connection');
+        const failure = NetworkFailure(message: 'No internet connection');
         when(() => mockRepository.createMeeting(params))
-            .thenAnswer((_) async => ResultFailure(failure));
+            .thenAnswer((_) async => const ResultFailure(failure));
 
         // Act
         final result = await useCase(params);
@@ -275,15 +275,15 @@ void main() {
 
       test('should handle room creation service failures', () async {
         // Arrange
-        final params = CreateMeetingParams(
+        const params = CreateMeetingParams(
           title: 'Service Failure Test',
           hostId: 'user-123',
-          settings: const MeetingSettings.openMeeting(),
+          settings: MeetingSettings.openMeeting(),
         );
 
-        final failure = ServiceFailure('LiveKit room creation failed');
+        const failure = ServiceFailure('LiveKit room creation failed');
         when(() => mockRepository.createMeeting(params))
-            .thenAnswer((_) async => ResultFailure(failure));
+            .thenAnswer((_) async => const ResultFailure(failure));
 
         // Act
         final result = await useCase(params);
@@ -298,11 +298,11 @@ void main() {
     group('Edge Cases', () {
       test('should handle settings validation properly', () async {
         // Arrange - Settings with invalid participant limit
-        final invalidSettings = MeetingSettings(
+        const invalidSettings = MeetingSettings(
           maxParticipants: 0, // Invalid
         );
 
-        final params = CreateMeetingParams(
+        const params = CreateMeetingParams(
           title: 'Settings Test',
           hostId: 'user-123',
           settings: invalidSettings,
@@ -320,10 +320,10 @@ void main() {
 
       test('should validate special characters in title', () async {
         // Arrange
-        final params = CreateMeetingParams(
+        const params = CreateMeetingParams(
           title: 'Meeting<script>alert("xss")</script>',
           hostId: 'user-123',
-          settings: const MeetingSettings.openMeeting(),
+          settings: MeetingSettings.openMeeting(),
         );
 
         final expectedMeeting = Meeting(
@@ -351,15 +351,15 @@ void main() {
 
       test('should handle concurrent creation attempts', () async {
         // Arrange
-        final params = CreateMeetingParams(
+        const params = CreateMeetingParams(
           title: 'Concurrent Test',
           hostId: 'user-123',
-          settings: const MeetingSettings.openMeeting(),
+          settings: MeetingSettings.openMeeting(),
         );
 
-        final failure = ConflictFailure('Room ID already exists');
+        const failure = ConflictFailure('Room ID already exists');
         when(() => mockRepository.createMeeting(params))
-            .thenAnswer((_) async => ResultFailure(failure));
+            .thenAnswer((_) async => const ResultFailure(failure));
 
         // Act
         final result = await useCase(params);
@@ -374,10 +374,10 @@ void main() {
     group('Business Logic', () {
       test('should ensure meeting starts in scheduled state', () async {
         // Arrange
-        final params = CreateMeetingParams(
+        const params = CreateMeetingParams(
           title: 'State Test Meeting',
           hostId: 'user-123',
-          settings: const MeetingSettings.openMeeting(),
+          settings: MeetingSettings.openMeeting(),
         );
 
         final expectedMeeting = Meeting(
@@ -406,16 +406,16 @@ void main() {
 
       test('should generate unique identifiers for each meeting', () async {
         // Arrange
-        final params1 = CreateMeetingParams(
+        const params1 = CreateMeetingParams(
           title: 'Meeting One',
           hostId: 'user-123',
-          settings: const MeetingSettings.openMeeting(),
+          settings: MeetingSettings.openMeeting(),
         );
 
-        final params2 = CreateMeetingParams(
+        const params2 = CreateMeetingParams(
           title: 'Meeting Two',
           hostId: 'user-123',
-          settings: const MeetingSettings.openMeeting(),
+          settings: MeetingSettings.openMeeting(),
         );
 
         final meeting1 = Meeting(

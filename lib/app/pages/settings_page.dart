@@ -267,9 +267,9 @@ class SettingsPage extends ConsumerWidget {
             side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
           ),
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Icon(Icons.logout),
             SizedBox(width: 8),
             Text(

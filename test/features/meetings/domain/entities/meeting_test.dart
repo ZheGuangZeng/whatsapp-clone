@@ -13,7 +13,7 @@ void main() {
 
     setUp(() {
       testCreatedAt = DateTime(2024, 1, 15, 10, 30);
-      testSettings = MeetingSettings(
+      testSettings = const MeetingSettings(
         maxParticipants: 50,
         isRecordingEnabled: true,
         isWaitingRoomEnabled: false,
@@ -30,7 +30,7 @@ void main() {
         scheduledStartTime: testCreatedAt.add(const Duration(hours: 1)),
         state: MeetingState.scheduled,
         settings: testSettings,
-        participants: [],
+        participants: const [],
       );
     });
 
@@ -59,7 +59,7 @@ void main() {
           createdAt: testCreatedAt,
           state: MeetingState.active,
           settings: testSettings,
-          participants: [],
+          participants: const [],
         );
 
         // Assert
@@ -244,7 +244,7 @@ void main() {
           scheduledStartTime: DateTime.now().add(const Duration(hours: 1)),
           state: MeetingState.scheduled,
           settings: testSettings,
-          participants: [],
+          participants: const [],
         );
 
         expect(futureMeeting.scheduledStartTime!.isAfter(futureMeeting.createdAt), isTrue);
@@ -262,7 +262,7 @@ void main() {
           createdAt: testCreatedAt,
           state: MeetingState.scheduled,
           settings: testSettings,
-          participants: [],
+          participants: const [],
         );
 
         final meeting2 = Meeting(
@@ -273,7 +273,7 @@ void main() {
           createdAt: testCreatedAt,
           state: MeetingState.scheduled,
           settings: testSettings,
-          participants: [],
+          participants: const [],
         );
 
         // Assert
@@ -293,8 +293,8 @@ void main() {
     group('CopyWith Functionality', () {
       test('should create copy with updated fields', () {
         // Arrange
-        final newTitle = 'Updated Meeting Title';
-        final newState = MeetingState.active;
+        const newTitle = 'Updated Meeting Title';
+        const newState = MeetingState.active;
 
         // Act
         final updatedMeeting = testMeeting.copyWith(
