@@ -416,12 +416,6 @@ class CallsPage extends ConsumerWidget {
 
 /// Mock data classes for call history
 class CallHistoryItem {
-  final String participantName;
-  final DateTime timestamp;
-  final Duration? duration;
-  final CallStatus status;
-  final bool isVideoCall;
-
   CallHistoryItem({
     required this.participantName,
     required this.timestamp,
@@ -429,6 +423,12 @@ class CallHistoryItem {
     required this.status,
     required this.isVideoCall,
   });
+
+  final String participantName;
+  final DateTime timestamp;
+  final Duration? duration;
+  final CallStatus status;
+  final bool isVideoCall;
 }
 
 enum CallStatus {

@@ -13,7 +13,7 @@ void main() {
       thumbnailPath: 'files/2024/01/thumbnails/test_file_thumb.jpg',
       uploadedBy: 'user_123',
       uploadedAt: DateTime.parse('2024-01-15T10:30:00Z'),
-      metadata: {'width': 1920, 'height': 1080, 'camera': 'iPhone 15'},
+      metadata: const {'width': 1920, 'height': 1080, 'camera': 'iPhone 15'},
       mimeType: 'image/jpeg',
       checksum: 'sha256:abc123def456',
       compressionRatio: 0.8,
@@ -199,7 +199,7 @@ void main() {
           thumbnailPath: 'files/2024/01/thumbnails/test_file_thumb.jpg',
           uploadedBy: 'user_123',
           uploadedAt: DateTime.parse('2024-01-15T10:30:00Z'),
-          metadata: {'width': 1920, 'height': 1080, 'camera': 'iPhone 15'},
+          metadata: const {'width': 1920, 'height': 1080, 'camera': 'iPhone 15'},
           mimeType: 'image/jpeg',
           checksum: 'sha256:abc123def456',
           compressionRatio: 0.8,
@@ -221,7 +221,7 @@ void main() {
   });
 
   group('UploadProgressEntity', () {
-    final testProgress = UploadProgressEntity(
+    const testProgress = UploadProgressEntity(
       fileId: 'file_123',
       uploadedBytes: 512000,
       totalBytes: 1024000,
@@ -246,7 +246,7 @@ void main() {
       test('should calculate progress percentage correctly', () {
         expect(testProgress.progress, equals(50.0));
         
-        final completedProgress = UploadProgressEntity(
+        const completedProgress = UploadProgressEntity(
           fileId: 'file_456',
           uploadedBytes: 1000,
           totalBytes: 1000,
@@ -254,7 +254,7 @@ void main() {
         );
         expect(completedProgress.progress, equals(100.0));
 
-        final zeroTotalProgress = UploadProgressEntity(
+        const zeroTotalProgress = UploadProgressEntity(
           fileId: 'file_789',
           uploadedBytes: 0,
           totalBytes: 0,
@@ -283,7 +283,7 @@ void main() {
         final fastProgress = testProgress.copyWith(speed: 2097152.0);
         expect(fastProgress.formattedSpeed, equals('2.0 MB/s'));
 
-        final noSpeedProgress = UploadProgressEntity(
+        const noSpeedProgress = UploadProgressEntity(
           fileId: 'file_no_speed',
           uploadedBytes: 500,
           totalBytes: 1000,
@@ -311,7 +311,7 @@ void main() {
 
     group('equality', () {
       test('should be equal when all properties match', () {
-        final otherProgress = UploadProgressEntity(
+        const otherProgress = UploadProgressEntity(
           fileId: 'file_123',
           uploadedBytes: 512000,
           totalBytes: 1024000,

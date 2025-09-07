@@ -6,7 +6,7 @@ void main() {
     late MeetingSettings testSettings;
 
     setUp(() {
-      testSettings = MeetingSettings(
+      testSettings = const MeetingSettings(
         maxParticipants: 50,
         isRecordingEnabled: true,
         isWaitingRoomEnabled: false,
@@ -25,7 +25,7 @@ void main() {
 
       test('should create settings with default values', () {
         // Arrange & Act
-        final defaultSettings = MeetingSettings();
+        const defaultSettings = MeetingSettings();
 
         // Assert
         expect(defaultSettings.maxParticipants, equals(100));
@@ -39,7 +39,7 @@ void main() {
 
       test('should create settings with custom optional fields', () {
         // Arrange & Act
-        final customSettings = MeetingSettings(
+        const customSettings = MeetingSettings(
           maxParticipants: 25,
           isRecordingEnabled: false,
           isWaitingRoomEnabled: true,
@@ -64,7 +64,7 @@ void main() {
     group('Settings Validation', () {
       test('should validate max participants minimum value', () {
         // Arrange & Act
-        final settingsWithMinParticipants = MeetingSettings(maxParticipants: 1);
+        const settingsWithMinParticipants = MeetingSettings(maxParticipants: 1);
 
         // Assert
         expect(settingsWithMinParticipants.maxParticipants, greaterThanOrEqualTo(1));
@@ -72,7 +72,7 @@ void main() {
 
       test('should validate max participants maximum value', () {
         // Arrange & Act
-        final settingsWithMaxParticipants = MeetingSettings(maxParticipants: 1000);
+        const settingsWithMaxParticipants = MeetingSettings(maxParticipants: 1000);
 
         // Assert
         expect(settingsWithMaxParticipants.maxParticipants, lessThanOrEqualTo(1000));
@@ -80,7 +80,7 @@ void main() {
 
       test('should enforce password requirements when set', () {
         // Arrange
-        final protectedSettings = MeetingSettings(
+        const protectedSettings = MeetingSettings(
           password: 'validPassword123',
         );
 
@@ -99,7 +99,7 @@ void main() {
     group('Security Settings', () {
       test('should configure private meeting with approval required', () {
         // Arrange & Act
-        final privateSettings = MeetingSettings(
+        const privateSettings = MeetingSettings(
           isPublic: false,
           requireApproval: true,
           password: 'private123',
@@ -114,7 +114,7 @@ void main() {
 
       test('should configure public meeting without restrictions', () {
         // Arrange & Act
-        final publicSettings = MeetingSettings(
+        const publicSettings = MeetingSettings(
           isPublic: true,
           requireApproval: false,
         );
@@ -128,13 +128,13 @@ void main() {
 
       test('should determine security level correctly', () {
         // Arrange
-        final secureSettings = MeetingSettings(
+        const secureSettings = MeetingSettings(
           password: 'secure',
           requireApproval: true,
           isWaitingRoomEnabled: true,
         );
 
-        final openSettings = MeetingSettings(
+        const openSettings = MeetingSettings(
           isPublic: true,
           requireApproval: false,
           isWaitingRoomEnabled: false,
@@ -149,8 +149,8 @@ void main() {
     group('Feature Settings', () {
       test('should configure recording settings correctly', () {
         // Arrange
-        final recordingSettings = MeetingSettings(isRecordingEnabled: true);
-        final noRecordingSettings = MeetingSettings(isRecordingEnabled: false);
+        const recordingSettings = MeetingSettings(isRecordingEnabled: true);
+        const noRecordingSettings = MeetingSettings(isRecordingEnabled: false);
 
         // Assert
         expect(recordingSettings.isRecordingEnabled, isTrue);
@@ -159,8 +159,8 @@ void main() {
 
       test('should configure screen share permissions', () {
         // Arrange
-        final screenShareAllowed = MeetingSettings(allowScreenShare: true);
-        final screenShareBlocked = MeetingSettings(allowScreenShare: false);
+        const screenShareAllowed = MeetingSettings(allowScreenShare: true);
+        const screenShareBlocked = MeetingSettings(allowScreenShare: false);
 
         // Assert
         expect(screenShareAllowed.allowScreenShare, isTrue);
@@ -169,8 +169,8 @@ void main() {
 
       test('should configure chat permissions', () {
         // Arrange
-        final chatEnabled = MeetingSettings(allowChat: true);
-        final chatDisabled = MeetingSettings(allowChat: false);
+        const chatEnabled = MeetingSettings(allowChat: true);
+        const chatDisabled = MeetingSettings(allowChat: false);
 
         // Assert
         expect(chatEnabled.allowChat, isTrue);
@@ -179,8 +179,8 @@ void main() {
 
       test('should configure waiting room feature', () {
         // Arrange
-        final waitingRoomEnabled = MeetingSettings(isWaitingRoomEnabled: true);
-        final waitingRoomDisabled = MeetingSettings(isWaitingRoomEnabled: false);
+        const waitingRoomEnabled = MeetingSettings(isWaitingRoomEnabled: true);
+        const waitingRoomDisabled = MeetingSettings(isWaitingRoomEnabled: false);
 
         // Assert
         expect(waitingRoomEnabled.isWaitingRoomEnabled, isTrue);
@@ -191,13 +191,13 @@ void main() {
     group('Business Logic', () {
       test('should determine if meeting allows anonymous participants', () {
         // Arrange
-        final publicNoApproval = MeetingSettings(
+        const publicNoApproval = MeetingSettings(
           isPublic: true,
           requireApproval: false,
           isWaitingRoomEnabled: false,
         );
 
-        final privateWithApproval = MeetingSettings(
+        const privateWithApproval = MeetingSettings(
           isPublic: false,
           requireApproval: true,
           isWaitingRoomEnabled: true,
@@ -210,12 +210,12 @@ void main() {
 
       test('should determine if meeting requires host approval', () {
         // Arrange
-        final autoJoin = MeetingSettings(
+        const autoJoin = MeetingSettings(
           requireApproval: false,
           isWaitingRoomEnabled: false,
         );
 
-        final manualApproval = MeetingSettings(
+        const manualApproval = MeetingSettings(
           requireApproval: true,
           isWaitingRoomEnabled: true,
         );
@@ -227,7 +227,7 @@ void main() {
 
       test('should validate participant limits against settings', () {
         // Arrange
-        final limitedSettings = MeetingSettings(maxParticipants: 5);
+        const limitedSettings = MeetingSettings(maxParticipants: 5);
 
         // Assert
         expect(limitedSettings.canAccommodate(3), isTrue);
@@ -240,14 +240,14 @@ void main() {
     group('Equatable Implementation', () {
       test('should be equal when all properties match', () {
         // Arrange
-        final settings1 = MeetingSettings(
+        const settings1 = MeetingSettings(
           maxParticipants: 30,
           isRecordingEnabled: true,
           isWaitingRoomEnabled: true,
           allowScreenShare: false,
         );
 
-        final settings2 = MeetingSettings(
+        const settings2 = MeetingSettings(
           maxParticipants: 30,
           isRecordingEnabled: true,
           isWaitingRoomEnabled: true,
@@ -271,8 +271,8 @@ void main() {
     group('CopyWith Functionality', () {
       test('should create copy with updated fields', () {
         // Arrange
-        final newMaxParticipants = 75;
-        final newRecordingStatus = false;
+        const newMaxParticipants = 75;
+        const newRecordingStatus = false;
 
         // Act
         final updatedSettings = testSettings.copyWith(
@@ -297,7 +297,7 @@ void main() {
 
       test('should handle password updates correctly', () {
         // Arrange
-        final newPassword = 'newSecurePassword';
+        const newPassword = 'newSecurePassword';
 
         // Act
         final securedSettings = testSettings.copyWith(password: newPassword);
@@ -314,7 +314,7 @@ void main() {
     group('Settings Templates', () {
       test('should create default open meeting settings', () {
         // Act
-        final openMeeting = MeetingSettings.openMeeting();
+        const openMeeting = MeetingSettings.openMeeting();
 
         // Assert
         expect(openMeeting.isPublic, isTrue);
@@ -327,7 +327,7 @@ void main() {
 
       test('should create secure meeting settings', () {
         // Act
-        final secureMeeting = MeetingSettings.secureMeeting();
+        const secureMeeting = MeetingSettings.secureMeeting();
 
         // Assert
         expect(secureMeeting.isPublic, isFalse);
@@ -339,7 +339,7 @@ void main() {
 
       test('should create webinar settings', () {
         // Act
-        final webinarSettings = MeetingSettings.webinar();
+        const webinarSettings = MeetingSettings.webinar();
 
         // Assert
         expect(webinarSettings.maxParticipants, greaterThan(100));

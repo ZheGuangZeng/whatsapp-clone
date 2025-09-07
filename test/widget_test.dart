@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:whatsapp_clone/main.dart';
 import 'package:whatsapp_clone/app/pages/splash_page.dart';
+import 'package:whatsapp_clone/main.dart';
 
 void main() {
   group('WhatsApp Clone App', () {

@@ -19,22 +19,6 @@ class AppConfig {
   static String _getEnvVar(String key, String defaultValue) {
     return dotenv.env[key] ?? defaultValue;
   }
-  
-  static bool _getBoolEnvVar(String key, bool defaultValue) {
-    final value = dotenv.env[key];
-    if (value != null) {
-      return value.toLowerCase() == 'true';
-    }
-    return defaultValue;
-  }
-  
-  static int _getIntEnvVar(String key, int defaultValue) {
-    final value = dotenv.env[key];
-    if (value != null) {
-      return int.tryParse(value) ?? defaultValue;
-    }
-    return defaultValue;
-  }
 
   /// Environment detection
   static const String _environment = String.fromEnvironment('ENVIRONMENT', defaultValue: 'development');

@@ -5,12 +5,12 @@ import 'package:go_router/go_router.dart';
 
 /// Meeting lobby page with preview and settings
 class MeetingLobbyPage extends ConsumerStatefulWidget {
-  final String meetingId;
-  
   const MeetingLobbyPage({
     required this.meetingId,
     super.key,
   });
+
+  final String meetingId;
 
   @override
   ConsumerState<MeetingLobbyPage> createState() => _MeetingLobbyPageState();
@@ -70,9 +70,9 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  Text(
+                  const Text(
                     'Ready to join?',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -195,16 +195,16 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
           color: Colors.grey[800],
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Column(
+        child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.videocam_off,
               size: 48,
               color: Colors.white54,
             ),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: 16),
+            Text(
               'Camera is off',
               style: TextStyle(
                 color: Colors.white54,
@@ -343,7 +343,7 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
               trailing: Switch(
                 value: false,
                 onChanged: (value) => Navigator.pop(context),
-                activeColor: const Color(0xFF25D366),
+                activeTrackColor: const Color(0xFF25D366),
               ),
             ),
             ListTile(
@@ -355,7 +355,7 @@ class _MeetingLobbyPageState extends ConsumerState<MeetingLobbyPage> {
               trailing: Switch(
                 value: true,
                 onChanged: (value) => Navigator.pop(context),
-                activeColor: const Color(0xFF25D366),
+                activeTrackColor: const Color(0xFF25D366),
               ),
             ),
           ],

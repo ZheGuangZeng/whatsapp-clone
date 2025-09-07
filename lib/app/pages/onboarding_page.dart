@@ -16,19 +16,19 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   int _currentPage = 0;
   
   final List<OnboardingStep> _steps = [
-    OnboardingStep(
+    const OnboardingStep(
       title: 'Welcome to WhatsApp Clone',
       subtitle: 'Connect with friends and family through messages and video calls',
       icon: Icons.waving_hand,
       color: Color(0xFF25D366),
     ),
-    OnboardingStep(
+    const OnboardingStep(
       title: 'Stay Connected',
       subtitle: 'Send messages, share photos, and make video calls seamlessly',
       icon: Icons.chat_bubble_outline,
       color: Color(0xFF2196F3),
     ),
-    OnboardingStep(
+    const OnboardingStep(
       title: 'Permissions Required',
       subtitle: 'We need some permissions to provide the best experience',
       icon: Icons.security,
@@ -306,10 +306,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
 /// Data class for onboarding steps
 class OnboardingStep {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
 
   const OnboardingStep({
     required this.title,
@@ -317,4 +313,8 @@ class OnboardingStep {
     required this.icon,
     required this.color,
   });
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
 }

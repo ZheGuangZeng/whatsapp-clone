@@ -19,39 +19,9 @@ class UserModel {
     this.isOnline = false,
   });
 
-  /// Unique identifier for the user
-  final String id;
-  
-  /// User's email address (required for authentication)
-  final String email;
-  
-  /// User's phone number (optional, used for phone auth)
-  final String? phone;
-  
-  /// Display name shown to other users
-  final String displayName;
-  
-  /// URL to user's profile avatar image
-  final String? avatarUrl;
-  
-  /// User's status message
-  final String? status;
-  
-  /// When the user account was created
-  final DateTime createdAt;
-  
-  /// When the user was last seen online
-  final DateTime? lastSeen;
-  
-  /// Whether the user is currently online
-  final bool isOnline;
-
   /// Creates a UserModel from JSON map
   factory UserModel.fromJson(Map<String, dynamic> json) =>
       _$UserModelFromJson(json);
-
-  /// Converts UserModel to JSON map
-  Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
   /// Creates a UserModel from Supabase auth user
   factory UserModel.fromSupabaseUser(
@@ -91,6 +61,36 @@ class UserModel {
       isOnline: user.isOnline,
     );
   }
+
+  /// Unique identifier for the user
+  final String id;
+  
+  /// User's email address (required for authentication)
+  final String email;
+  
+  /// User's phone number (optional, used for phone auth)
+  final String? phone;
+  
+  /// Display name shown to other users
+  final String displayName;
+  
+  /// URL to user's profile avatar image
+  final String? avatarUrl;
+  
+  /// User's status message
+  final String? status;
+  
+  /// When the user account was created
+  final DateTime createdAt;
+  
+  /// When the user was last seen online
+  final DateTime? lastSeen;
+  
+  /// Whether the user is currently online
+  final bool isOnline;
+
+  /// Converts UserModel to JSON map
+  Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
   /// Converts to domain entity
   User toDomain() {

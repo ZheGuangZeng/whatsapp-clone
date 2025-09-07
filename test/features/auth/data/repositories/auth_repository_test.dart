@@ -742,7 +742,7 @@ void main() {
         await expectLater(
           stream,
           emitsInOrder([
-            isA<AuthSession>().having((s) => s!.accessToken, 'accessToken', testSessionModel.accessToken),
+            isA<AuthSession>().having((s) => s.accessToken, 'accessToken', testSessionModel.accessToken),
             isNull,
           ]),
         );

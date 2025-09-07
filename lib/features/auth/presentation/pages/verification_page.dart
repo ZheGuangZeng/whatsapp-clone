@@ -127,7 +127,7 @@ class _VerificationPageState extends ConsumerState<VerificationPage> {
                     color: Colors.grey[600],
                   ),
                   children: [
-                    TextSpan(
+                    const TextSpan(
                       text: 'We sent a verification code to\n',
                     ),
                     TextSpan(

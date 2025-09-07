@@ -96,6 +96,7 @@ final class LoadingState extends AuthState {
 final class AuthenticatedState extends AuthState {
   const AuthenticatedState(this.session);
 
+  @override
   final AuthSession session;
 
   @override

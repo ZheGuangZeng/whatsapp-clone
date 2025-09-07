@@ -156,6 +156,9 @@ ccpm 设置需要采用 官方推荐方式？
   ccpm 的流程是否需要统一规划 prds 和 epics ？
 
   #
+  是否需要添加规则，在合适的时候提醒我执行合适的 ccpm 命令？比如 /pm: 和 /context: 等等？
+
+  #
   采用 flutter Clean Architecture实施
   严格的 TDD 实施
   采用 TDD方法论 和 Clean Architecture
@@ -237,3 +240,69 @@ ccpm 设置需要采用 官方推荐方式？
 
   您更倾向于哪个方向？
   我可以根据您的选择制定详细的执行计划。
+
+
+  🎯 建议的CCPM流程
+
+  第1步: 创建生产就绪PRD
+
+  /pm:prd-new production-ready
+  作用: 创建标准化的生产就绪优化PRD，包含你提到的5个优化阶段
+
+  第2步: 解析为技术史诗
+
+  /pm:prd-parse production-ready
+  作用: 将PRD分解为具体的技术任务和GitHub Issues
+
+  第3步: 同步到GitHub
+
+  /pm:epic-oneshot production-ready
+  作用: 创建Issues和项目看板，建立任务依赖关系
+
+  第4步: 并发执行
+
+  /pm:epic-start production-ready
+  作用: 启动多个并发agents处理不同优化任务
+
+  💡 为什么使用CCPM流程？
+
+  1. 系统化管理: 5个优化阶段可以并行处理
+  2. 质量保证: 每个阶段有明确的验收标准
+  3. 进度透明: GitHub Issues实时跟踪进度
+  4. 经验复用: 复用TDD史诗的成功模式
+
+  从刚完成的TDD史诗看，CCPM流程非常适合这种多阶段、复杂项目
+  的管理。
+
+
+#
+采用 ccpm 来管理开发 项目的最佳实践是什么？
+是否需要先分解 拆分 prd 和 epic？
+然后 逐个完成 prd 和 epic ?
+还是先有一个 prd 的时候就可以开始开发？
+prd 完成之后，再规划下一个 prd ?
+
+
+#
+/pm:prd-new  的是 预检验 都有哪些内容？
+
+
+  1. 部署环境: 目标是什么生产环境？(App Store, Google Play,
+  企业内部部署?)
+  A: App Store, Google Play
+
+  2. 性能基准: 具体的启动时间目标？(<3秒已提到)
+  3. 监控需求: 使用哪些监控服务？(Firebase Crashlytics,
+  Sentry, 自建?)
+  A: 自建
+
+  4. CI/CD偏好: GitHub Actions, GitLab CI, 还是其他平台?
+  A: GitHub Actions 是否免费？如果不免费的话，可以考虑自建？
+
+  5. 安全要求: 有特殊的安全合规要求吗？
+  A: server 需要部署在 海外，比如 新加坡，日本
+
+
+
+  #
+  是否需要一个 新的 prd, 保证  local dev 能顺利运行？

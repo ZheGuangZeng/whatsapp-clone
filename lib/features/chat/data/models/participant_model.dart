@@ -14,6 +14,20 @@ class ParticipantModel extends Participant {
     super.permissions = const [],
   });
 
+  /// Create ParticipantModel from Participant entity
+  factory ParticipantModel.fromEntity(Participant entity) {
+    return ParticipantModel(
+      id: entity.id,
+      userId: entity.userId,
+      roomId: entity.roomId,
+      joinedAt: entity.joinedAt,
+      role: entity.role,
+      isActive: entity.isActive,
+      lastActivity: entity.lastActivity,
+      permissions: entity.permissions,
+    );
+  }
+
   /// Create ParticipantModel from JSON data
   factory ParticipantModel.fromJson(Map<String, dynamic> json) {
     if (json['id'] == null) {
@@ -55,20 +69,6 @@ class ParticipantModel extends Participant {
       'last_activity': lastActivity?.toIso8601String(),
       'permissions': permissions,
     };
-  }
-
-  /// Create ParticipantModel from Participant entity
-  factory ParticipantModel.fromEntity(Participant entity) {
-    return ParticipantModel(
-      id: entity.id,
-      userId: entity.userId,
-      roomId: entity.roomId,
-      joinedAt: entity.joinedAt,
-      role: entity.role,
-      isActive: entity.isActive,
-      lastActivity: entity.lastActivity,
-      permissions: entity.permissions,
-    );
   }
 
   /// Convert ParticipantModel to Participant entity

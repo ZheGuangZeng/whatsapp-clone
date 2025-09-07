@@ -33,7 +33,7 @@ void main() {
       isActive: true,
       replyCount: 5,
       lastReply: testLastReply,
-      participants: ['user_1', 'user_2', 'user_3'],
+      participants: const ['user_1', 'user_2', 'user_3'],
     );
 
     group('fromJson', () {
@@ -141,19 +141,19 @@ void main() {
       test('should validate required fields are present', () {
         // Test missing id
         expect(
-          () => MessageThreadModel.fromJson({'room_id': 'room_1'}),
+          () => MessageThreadModel.fromJson(const {'room_id': 'room_1'}),
           throwsException,
         );
 
         // Test missing room_id
         expect(
-          () => MessageThreadModel.fromJson({'id': 'thread_1'}),
+          () => MessageThreadModel.fromJson(const {'id': 'thread_1'}),
           throwsException,
         );
 
         // Test missing root_message
         expect(
-          () => MessageThreadModel.fromJson({
+          () => MessageThreadModel.fromJson(const {
             'id': 'thread_1',
             'room_id': 'room_1',
             'created_at': '2024-01-01T12:00:00.000Z',
@@ -163,7 +163,7 @@ void main() {
 
         // Test missing created_at
         expect(
-          () => MessageThreadModel.fromJson({
+          () => MessageThreadModel.fromJson(const {
             'id': 'thread_1',
             'room_id': 'room_1',
             'root_message': {
@@ -264,7 +264,7 @@ void main() {
           isActive: true,
           replyCount: 5,
           lastReply: testLastReply,
-          participants: ['user_1', 'user_2', 'user_3'],
+          participants: const ['user_1', 'user_2', 'user_3'],
         );
 
         // Act - Convert entity to model

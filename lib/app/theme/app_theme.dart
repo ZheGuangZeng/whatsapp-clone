@@ -31,11 +31,9 @@ class AppTheme {
         primary: whatsappGreen,
         secondary: whatsappTeal,
         surface: Colors.white,
-        background: const Color(0xFFF5F5F5),
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: Colors.black87,
-        onBackground: Colors.black87,
       ),
 
       // App bar theme
@@ -213,11 +211,9 @@ class AppTheme {
         primary: whatsappGreen,
         secondary: whatsappTeal,
         surface: const Color(0xFF1E1E1E),
-        background: const Color(0xFF121212),
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: Colors.white70,
-        onBackground: Colors.white70,
       ),
 
       // App bar theme
@@ -353,9 +349,9 @@ class AppTheme {
   }
 
   /// Custom message bubble styles
-  static BoxDecoration outgoingMessageDecoration = BoxDecoration(
+  static BoxDecoration outgoingMessageDecoration = const BoxDecoration(
     color: outgoingMessageColor,
-    borderRadius: const BorderRadius.only(
+    borderRadius: BorderRadius.only(
       topLeft: Radius.circular(18),
       topRight: Radius.circular(18),
       bottomLeft: Radius.circular(18),

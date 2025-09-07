@@ -1,5 +1,5 @@
-import '../../domain/entities/chat_message.dart';
 import '../../../messaging/domain/entities/message.dart';
+import '../../domain/entities/chat_message.dart';
 
 /// Data model for ChatMessage with JSON serialization
 class ChatMessageModel extends ChatMessage {
@@ -18,6 +18,25 @@ class ChatMessageModel extends ChatMessage {
     super.isDeleted = false,
     super.metadata = const {},
   });
+
+  /// Create ChatMessageModel from ChatMessage entity
+  factory ChatMessageModel.fromEntity(ChatMessage entity) {
+    return ChatMessageModel(
+      id: entity.id,
+      senderId: entity.senderId,
+      content: entity.content,
+      roomId: entity.roomId,
+      timestamp: entity.timestamp,
+      messageType: entity.messageType,
+      isRead: entity.isRead,
+      threadId: entity.threadId,
+      replyToMessageId: entity.replyToMessageId,
+      reactions: entity.reactions,
+      editedAt: entity.editedAt,
+      isDeleted: entity.isDeleted,
+      metadata: entity.metadata,
+    );
+  }
 
   /// Create ChatMessageModel from JSON data
   factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
@@ -73,25 +92,6 @@ class ChatMessageModel extends ChatMessage {
       'is_deleted': isDeleted,
       'metadata': metadata,
     };
-  }
-
-  /// Create ChatMessageModel from ChatMessage entity
-  factory ChatMessageModel.fromEntity(ChatMessage entity) {
-    return ChatMessageModel(
-      id: entity.id,
-      senderId: entity.senderId,
-      content: entity.content,
-      roomId: entity.roomId,
-      timestamp: entity.timestamp,
-      messageType: entity.messageType,
-      isRead: entity.isRead,
-      threadId: entity.threadId,
-      replyToMessageId: entity.replyToMessageId,
-      reactions: entity.reactions,
-      editedAt: entity.editedAt,
-      isDeleted: entity.isDeleted,
-      metadata: entity.metadata,
-    );
   }
 
   /// Convert ChatMessageModel to ChatMessage entity

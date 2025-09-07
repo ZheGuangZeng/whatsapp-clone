@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:whatsapp_clone/features/auth/data/repositories/auth_repository.dart';
 import 'package:whatsapp_clone/features/auth/domain/repositories/i_auth_repository.dart';
 
-import '../../../../fixtures/auth_fixtures.dart';
 
 void main() {
   group('IAuthRepository', () {

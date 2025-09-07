@@ -39,7 +39,7 @@ void main() {
           displayName: 'Jane Smith',
           role: ParticipantRole.moderator,
           joinedAt: testJoinedAt,
-          leftAt: testJoinedAt.add(Duration(hours: 1)),
+          leftAt: testJoinedAt.add(const Duration(hours: 1)),
           isAudioEnabled: false,
           isVideoEnabled: true,
           avatarUrl: 'https://example.com/avatar.jpg',
@@ -66,7 +66,7 @@ void main() {
         
         // Arrange - Participant with leftAt time
         final leftParticipant = testParticipant.copyWith(
-          leftAt: testJoinedAt.add(Duration(minutes: 30)),
+          leftAt: testJoinedAt.add(const Duration(minutes: 30)),
         );
 
         // Assert
@@ -76,14 +76,14 @@ void main() {
 
       test('should calculate session duration for left participant', () {
         // Arrange
-        final leftTime = testJoinedAt.add(Duration(minutes: 45));
+        final leftTime = testJoinedAt.add(const Duration(minutes: 45));
         final leftParticipant = testParticipant.copyWith(leftAt: leftTime);
 
         // Act
         final duration = leftParticipant.sessionDuration;
 
         // Assert
-        expect(duration, equals(Duration(minutes: 45)));
+        expect(duration, equals(const Duration(minutes: 45)));
       });
 
       test('should return null duration for present participant', () {
@@ -174,7 +174,7 @@ void main() {
       test('should validate left time is after joined time when present', () {
         // Arrange
         final leftParticipant = testParticipant.copyWith(
-          leftAt: testJoinedAt.add(Duration(minutes: 30)),
+          leftAt: testJoinedAt.add(const Duration(minutes: 30)),
         );
 
         // Assert
@@ -220,8 +220,8 @@ void main() {
     group('CopyWith Functionality', () {
       test('should create copy with updated fields', () {
         // Arrange
-        final newRole = ParticipantRole.moderator;
-        final newAudioStatus = false;
+        const newRole = ParticipantRole.moderator;
+        const newAudioStatus = false;
 
         // Act
         final updatedParticipant = testParticipant.copyWith(
@@ -246,7 +246,7 @@ void main() {
 
       test('should handle leaving participant correctly', () {
         // Arrange
-        final leaveTime = testJoinedAt.add(Duration(hours: 2));
+        final leaveTime = testJoinedAt.add(const Duration(hours: 2));
 
         // Act
         final leftParticipant = testParticipant.copyWith(leftAt: leaveTime);
@@ -254,7 +254,7 @@ void main() {
         // Assert
         expect(leftParticipant.leftAt, equals(leaveTime));
         expect(leftParticipant.isPresent, isFalse);
-        expect(leftParticipant.sessionDuration, equals(Duration(hours: 2)));
+        expect(leftParticipant.sessionDuration, equals(const Duration(hours: 2)));
       });
     });
   });

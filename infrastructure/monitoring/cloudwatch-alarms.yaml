@@ -1,0 +1,306 @@
+# CloudWatch Alarms Configuration for WhatsApp Clone Production Infrastructure
+# Comprehensive monitoring for application performance, infrastructure health, and security
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'WhatsApp Clone - Production Infrastructure Monitoring and Alerting'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: whatsapp-clone
+    Description: Project name for resource naming
+  
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [development, staging, production]
+    Description: Environment name
+  
+  SNSTopicArn:
+    Type: String
+    Description: SNS Topic ARN for alert notifications
+  
+  CloudFrontDistributionId:
+    Type: String
+    Description: CloudFront Distribution ID to monitor
+  
+  SupabaseProjectRef:
+    Type: String
+    Description: Supabase project reference for external monitoring
+
+Resources:
+  # =============================================================================
+  # APPLICATION PERFORMANCE ALARMS
+  # =============================================================================
+  
+  HighErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${Environment}-high-error-rate"
+      AlarmDescription: "High error rate detected in application"
+      MetricName: 4xxErrorRate
+      Namespace: AWS/CloudFront
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5.0
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: DistributionId
+          Value: !Ref CloudFrontDistributionId
+      AlarmActions:
+        - !Ref SNSTopicArn
+      TreatMissingData: notBreaching
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: AlertType
+          Value: Performance
+  
+  HighLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${Environment}-high-latency"
+      AlarmDescription: "High response latency detected"
+      MetricName: ResponseTime
+      Namespace: AWS/CloudFront
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 2000
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: DistributionId
+          Value: !Ref CloudFrontDistributionId
+      AlarmActions:
+        - !Ref SNSTopicArn
+      TreatMissingData: notBreaching
+  
+  CacheHitRateLowAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${Environment}-low-cache-hit-rate"
+      AlarmDescription: "Low cache hit rate - may indicate performance issues"
+      MetricName: CacheHitRate
+      Namespace: AWS/CloudFront
+      Statistic: Average
+      Period: 900
+      EvaluationPeriods: 2
+      Threshold: 80.0
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+        - Name: DistributionId
+          Value: !Ref CloudFrontDistributionId
+      AlarmActions:
+        - !Ref SNSTopicArn
+      TreatMissingData: notBreaching
+  
+  # =============================================================================
+  # SECURITY ALARMS
+  # =============================================================================
+  
+  WAFBlockedRequestsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${Environment}-waf-blocked-requests-spike"
+      AlarmDescription: "Spike in WAF blocked requests - possible attack"
+      MetricName: BlockedRequests
+      Namespace: AWS/WAFV2
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 100
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SNSTopicArn
+      TreatMissingData: notBreaching
+      Tags:
+        - Key: AlertType
+          Value: Security
+  
+  UnusualTrafficPatternAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${Environment}-unusual-traffic-pattern"
+      AlarmDescription: "Unusual traffic pattern detected"
+      MetricName: Requests
+      Namespace: AWS/CloudFront
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10000
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: DistributionId
+          Value: !Ref CloudFrontDistributionId
+      AlarmActions:
+        - !Ref SNSTopicArn
+      TreatMissingData: notBreaching
+  
+  # =============================================================================
+  # LAMBDA@EDGE MONITORING
+  # =============================================================================
+  
+  LambdaEdgeErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${Environment}-lambda-edge-errors"
+      AlarmDescription: "Errors in Lambda@Edge functions"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SNSTopicArn
+      TreatMissingData: notBreaching
+  
+  LambdaEdgeDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${Environment}-lambda-edge-duration"
+      AlarmDescription: "Lambda@Edge functions taking too long"
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 4000
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SNSTopicArn
+      TreatMissingData: notBreaching
+  
+  # =============================================================================
+  # CUSTOM METRICS ALARMS
+  # =============================================================================
+  
+  DatabaseConnectionFailuresAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${Environment}-database-connection-failures"
+      AlarmDescription: "High number of database connection failures"
+      MetricName: DatabaseConnectionFailures
+      Namespace: !Sub "${ProjectName}/Application"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SNSTopicArn
+      TreatMissingData: notBreaching
+  
+  MessageDeliveryFailuresAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${Environment}-message-delivery-failures"
+      AlarmDescription: "High message delivery failure rate"
+      MetricName: MessageDeliveryFailures
+      Namespace: !Sub "${ProjectName}/Application"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SNSTopicArn
+      TreatMissingData: notBreaching
+  
+  FileUploadFailuresAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${Environment}-file-upload-failures"
+      AlarmDescription: "High file upload failure rate"
+      MetricName: FileUploadFailures
+      Namespace: !Sub "${ProjectName}/Application"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 20
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SNSTopicArn
+      TreatMissingData: notBreaching
+  
+  # =============================================================================
+  # INFRASTRUCTURE HEALTH ALARMS
+  # =============================================================================
+  
+  HighCPUUtilizationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${Environment}-high-cpu-utilization"
+      AlarmDescription: "High CPU utilization detected"
+      MetricName: CPUUtilization
+      Namespace: AWS/ApplicationELB
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80.0
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SNSTopicArn
+      TreatMissingData: notBreaching
+  
+  LowHealthyHostsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${Environment}-low-healthy-hosts"
+      AlarmDescription: "Low number of healthy hosts behind load balancer"
+      MetricName: HealthyHostCount
+      Namespace: AWS/ApplicationELB
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 2
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+        - !Ref SNSTopicArn
+      TreatMissingData: breaching
+  
+  # =============================================================================
+  # COMPOSITE ALARMS
+  # =============================================================================
+  
+  ApplicationHealthCompositeAlarm:
+    Type: AWS::CloudWatch::CompositeAlarm
+    Properties:
+      AlarmName: !Sub "${ProjectName}-${Environment}-application-health-composite"
+      AlarmDescription: "Composite alarm for overall application health"
+      AlarmRule: !Sub |
+        ALARM("${HighErrorRateAlarm}") OR 
+        ALARM("${HighLatencyAlarm}") OR 
+        ALARM("${DatabaseConnectionFailuresAlarm}") OR
+        ALARM("${LowHealthyHostsAlarm}")
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref SNSTopicArn
+      Tags:
+        - Key: AlertType
+          Value: Composite
+        - Key: Priority
+          Value: High
+
+Outputs:
+  ApplicationHealthAlarmArn:
+    Description: "ARN of the composite application health alarm"
+    Value: !GetAtt ApplicationHealthCompositeAlarm.Arn
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-application-health-alarm-arn"
+  
+  SecurityAlarmsCount:
+    Description: "Number of security-related alarms created"
+    Value: 2
+  
+  PerformanceAlarmsCount:
+    Description: "Number of performance-related alarms created"
+    Value: 6
+  
+  InfrastructureAlarmsCount:
+    Description: "Number of infrastructure-related alarms created"
+    Value: 4

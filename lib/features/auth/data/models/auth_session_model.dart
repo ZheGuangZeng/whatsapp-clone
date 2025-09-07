@@ -2,7 +2,6 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/auth_session.dart';
-import '../../domain/entities/user.dart';
 import 'user_model.dart';
 
 part 'auth_session_model.g.dart';
@@ -18,18 +17,9 @@ class AuthSessionModel {
     required this.tokenType,
   });
 
-  final String accessToken;
-  final String refreshToken;
-  final UserModel user;
-  final DateTime expiresAt;
-  final String tokenType;
-
   /// Creates an AuthSessionModel from JSON map
   factory AuthSessionModel.fromJson(Map<String, dynamic> json) =>
       _$AuthSessionModelFromJson(json);
-
-  /// Converts AuthSessionModel to JSON map
-  Map<String, dynamic> toJson() => _$AuthSessionModelToJson(this);
 
   /// Creates an AuthSessionModel from Supabase session
   factory AuthSessionModel.fromSupabaseSession(
@@ -41,7 +31,7 @@ class AuthSessionModel {
       refreshToken: session.refreshToken ?? '',
       user: user,
       expiresAt: DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000),
-      tokenType: session.tokenType ?? 'Bearer',
+      tokenType: session.tokenType,
     );
   }
 
@@ -55,6 +45,15 @@ class AuthSessionModel {
       tokenType: session.tokenType,
     );
   }
+
+  final String accessToken;
+  final String refreshToken;
+  final UserModel user;
+  final DateTime expiresAt;
+  final String tokenType;
+
+  /// Converts AuthSessionModel to JSON map
+  Map<String, dynamic> toJson() => _$AuthSessionModelToJson(this);
 
   /// Converts to domain entity
   AuthSession toDomain() {

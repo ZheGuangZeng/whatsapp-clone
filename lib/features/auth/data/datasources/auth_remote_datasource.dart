@@ -12,9 +12,9 @@ class AuthRemoteDataSource {
   /// Gets the current session from Supabase
   Future<AuthSessionModel?> getCurrentSession() async {
     final session = _supabase.auth.currentSession;
-    if (session == null || session.user == null) return null;
+    if (session == null) return null;
 
-    final user = await _getUserProfile(session.user!.id);
+    final user = await _getUserProfile(session.user.id);
     return AuthSessionModel.fromSupabaseSession(session, user);
   }
 
@@ -288,10 +288,10 @@ class AuthRemoteDataSource {
   Stream<AuthSessionModel?> get authStateChanges {
     return _supabase.auth.onAuthStateChange.asyncMap((data) async {
       final session = data.session;
-      if (session == null || session.user == null) return null;
+      if (session == null) return null;
 
       try {
-        final user = await _getUserProfile(session.user!.id);
+        final user = await _getUserProfile(session.user.id);
         return AuthSessionModel.fromSupabaseSession(session, user);
       } catch (e) {
         return null;

@@ -133,7 +133,7 @@ void main() {
       
       // Assert
       expect(state, isA<VerificationRequiredState>());
-      final verificationState = state as VerificationRequiredState;
+      const verificationState = state as VerificationRequiredState;
       expect(verificationState.email, isNull);
       expect(verificationState.phone, isNull);
       expect(verificationState.tempSession, isNull);

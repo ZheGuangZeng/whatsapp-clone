@@ -1,19 +1,22 @@
+import '../config/environment_config.dart';
+
 /// Application-wide constants for WhatsApp Clone
 class AppConstants {
   // Private constructor to prevent instantiation
   AppConstants._();
 
-  /// Environment configuration
-  static const bool isDevelopment = true;
+  /// Environment configuration (delegated to EnvironmentConfig)
+  static bool get isDevelopment => EnvironmentConfig.isDevelopment;
+  static bool get isStaging => EnvironmentConfig.isStaging;
+  static bool get isProduction => EnvironmentConfig.isProduction;
 
-  /// Supabase configuration
-  /// TODO: Replace with actual Supabase URL and anon key
-  static const String supabaseUrl = 'https://your-project.supabase.co';
-  static const String supabaseAnonKey = 'your-anon-key';
+  /// Supabase configuration (from environment config)
+  static String get supabaseUrl => EnvironmentConfig.config.supabaseUrl;
+  static String get supabaseAnonKey => EnvironmentConfig.config.supabaseAnonKey;
 
-  /// App configuration
-  static const String appName = 'WhatsApp Clone';
-  static const String appVersion = '1.0.0';
+  /// App configuration (from environment config)
+  static String get appName => EnvironmentConfig.config.appName;
+  static String get appVersion => EnvironmentConfig.config.appVersion;
 
   /// UI Constants
   static const double defaultPadding = 16.0;

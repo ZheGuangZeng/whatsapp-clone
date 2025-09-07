@@ -1,0 +1,281 @@
+{
+  "CallerReference": "whatsapp-clone-production-cdn-2024",
+  "Comment": "WhatsApp Clone Production CDN with multi-region optimization and China support",
+  "DefaultRootObject": "index.html",
+  "Origins": {
+    "Quantity": 3,
+    "Items": [
+      {
+        "Id": "supabase-storage-primary",
+        "DomainName": "your-production-project-sg.supabase.co",
+        "OriginPath": "/storage/v1/object/public",
+        "CustomOriginConfig": {
+          "HTTPPort": 443,
+          "HTTPSPort": 443,
+          "OriginProtocolPolicy": "https-only",
+          "OriginSslProtocols": {
+            "Quantity": 2,
+            "Items": ["TLSv1.2", "TLSv1.3"]
+          },
+          "OriginReadTimeout": 30,
+          "OriginKeepaliveTimeout": 5
+        }
+      },
+      {
+        "Id": "supabase-storage-secondary",
+        "DomainName": "your-production-project-jp.supabase.co",
+        "OriginPath": "/storage/v1/object/public",
+        "CustomOriginConfig": {
+          "HTTPPort": 443,
+          "HTTPSPort": 443,
+          "OriginProtocolPolicy": "https-only",
+          "OriginSslProtocols": {
+            "Quantity": 2,
+            "Items": ["TLSv1.2", "TLSv1.3"]
+          },
+          "OriginReadTimeout": 30,
+          "OriginKeepaliveTimeout": 5
+        }
+      },
+      {
+        "Id": "app-static-assets",
+        "DomainName": "your-static-assets-bucket.s3.ap-southeast-1.amazonaws.com",
+        "OriginPath": "/production",
+        "S3OriginConfig": {
+          "OriginAccessIdentity": "origin-access-identity/cloudfront/YOUR-OAI-ID"
+        }
+      }
+    ]
+  },
+  "OriginGroups": {
+    "Quantity": 1,
+    "Items": [
+      {
+        "Id": "supabase-storage-failover",
+        "FailoverCriteria": {
+          "StatusCodes": {
+            "Quantity": 3,
+            "Items": [403, 404, 500]
+          }
+        },
+        "Members": {
+          "Quantity": 2,
+          "Items": [
+            {
+              "OriginId": "supabase-storage-primary"
+            },
+            {
+              "OriginId": "supabase-storage-secondary"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "DefaultCacheBehavior": {
+    "TargetOriginId": "supabase-storage-failover",
+    "ViewerProtocolPolicy": "redirect-to-https",
+    "TrustedSigners": {
+      "Enabled": false,
+      "Quantity": 0
+    },
+    "ForwardedValues": {
+      "QueryString": true,
+      "Cookies": {
+        "Forward": "none"
+      },
+      "Headers": {
+        "Quantity": 4,
+        "Items": [
+          "Authorization",
+          "Origin",
+          "Access-Control-Request-Method",
+          "Access-Control-Request-Headers"
+        ]
+      }
+    },
+    "MinTTL": 0,
+    "DefaultTTL": 86400,
+    "MaxTTL": 31536000,
+    "Compress": true,
+    "LambdaFunctionAssociations": {
+      "Quantity": 2,
+      "Items": [
+        {
+          "LambdaFunctionARN": "arn:aws:lambda:us-east-1:123456789012:function:intelligent-routing:1",
+          "EventType": "origin-request"
+        },
+        {
+          "LambdaFunctionARN": "arn:aws:lambda:us-east-1:123456789012:function:security-headers:1",
+          "EventType": "origin-response"
+        }
+      ]
+    }
+  },
+  "CacheBehaviors": {
+    "Quantity": 6,
+    "Items": [
+      {
+        "PathPattern": "/user-avatars/*",
+        "TargetOriginId": "supabase-storage-failover",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "MinTTL": 3600,
+        "DefaultTTL": 604800,
+        "MaxTTL": 2592000,
+        "Compress": true,
+        "ForwardedValues": {
+          "QueryString": false,
+          "Cookies": {
+            "Forward": "none"
+          }
+        }
+      },
+      {
+        "PathPattern": "/chat-media/*",
+        "TargetOriginId": "supabase-storage-failover",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "MinTTL": 86400,
+        "DefaultTTL": 604800,
+        "MaxTTL": 2592000,
+        "Compress": true,
+        "ForwardedValues": {
+          "QueryString": true,
+          "Cookies": {
+            "Forward": "none"
+          },
+          "Headers": {
+            "Quantity": 1,
+            "Items": ["Authorization"]
+          }
+        }
+      },
+      {
+        "PathPattern": "/message-attachments/*",
+        "TargetOriginId": "supabase-storage-failover",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "MinTTL": 0,
+        "DefaultTTL": 3600,
+        "MaxTTL": 86400,
+        "Compress": true,
+        "ForwardedValues": {
+          "QueryString": true,
+          "Cookies": {
+            "Forward": "none"
+          },
+          "Headers": {
+            "Quantity": 1,
+            "Items": ["Authorization"]
+          }
+        }
+      },
+      {
+        "PathPattern": "/thumbnails/*",
+        "TargetOriginId": "supabase-storage-failover",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "MinTTL": 86400,
+        "DefaultTTL": 2592000,
+        "MaxTTL": 31536000,
+        "Compress": true,
+        "ForwardedValues": {
+          "QueryString": false,
+          "Cookies": {
+            "Forward": "none"
+          }
+        }
+      },
+      {
+        "PathPattern": "/static/*",
+        "TargetOriginId": "app-static-assets",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "MinTTL": 86400,
+        "DefaultTTL": 2592000,
+        "MaxTTL": 31536000,
+        "Compress": true,
+        "ForwardedValues": {
+          "QueryString": false,
+          "Cookies": {
+            "Forward": "none"
+          }
+        }
+      },
+      {
+        "PathPattern": "/api/*",
+        "TargetOriginId": "supabase-storage-primary",
+        "ViewerProtocolPolicy": "redirect-to-https",
+        "MinTTL": 0,
+        "DefaultTTL": 0,
+        "MaxTTL": 86400,
+        "Compress": false,
+        "ForwardedValues": {
+          "QueryString": true,
+          "Cookies": {
+            "Forward": "all"
+          },
+          "Headers": {
+            "Quantity": 6,
+            "Items": [
+              "Authorization",
+              "Content-Type",
+              "Origin",
+              "Access-Control-Request-Method",
+              "Access-Control-Request-Headers",
+              "X-Forwarded-For"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "Comment": "WhatsApp Clone Production CDN with intelligent routing for China optimization",
+  "Enabled": true,
+  "PriceClass": "PriceClass_All",
+  "ViewerCertificate": {
+    "AcmCertificateArn": "arn:aws:acm:us-east-1:123456789012:certificate/your-certificate-id",
+    "SslSupportMethod": "sni-only",
+    "MinimumProtocolVersion": "TLSv1.2_2021",
+    "CertificateSource": "acm"
+  },
+  "Aliases": {
+    "Quantity": 2,
+    "Items": [
+      "cdn.your-production-domain.com",
+      "assets.your-production-domain.com"
+    ]
+  },
+  "WebACLId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/whatsapp-clone-waf/your-waf-id",
+  "Logging": {
+    "Enabled": true,
+    "IncludeCookies": false,
+    "Bucket": "whatsapp-clone-cdn-logs.s3.amazonaws.com",
+    "Prefix": "cloudfront-logs/"
+  },
+  "CustomErrorResponses": {
+    "Quantity": 4,
+    "Items": [
+      {
+        "ErrorCode": 403,
+        "ResponsePagePath": "/errors/403.html",
+        "ResponseCode": "200",
+        "ErrorCachingMinTTL": 300
+      },
+      {
+        "ErrorCode": 404,
+        "ResponsePagePath": "/errors/404.html",
+        "ResponseCode": "200",
+        "ErrorCachingMinTTL": 300
+      },
+      {
+        "ErrorCode": 500,
+        "ResponsePagePath": "/errors/500.html",
+        "ResponseCode": "200",
+        "ErrorCachingMinTTL": 60
+      },
+      {
+        "ErrorCode": 502,
+        "ResponsePagePath": "/errors/502.html",
+        "ResponseCode": "200",
+        "ErrorCachingMinTTL": 60
+      }
+    ]
+  }
+}

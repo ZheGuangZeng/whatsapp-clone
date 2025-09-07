@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../providers/auth_notifier.dart';
 import '../providers/auth_providers.dart';
 import '../providers/auth_state.dart';
-import '../widgets/auth_text_field.dart';
 import '../widgets/auth_button.dart';
+import '../widgets/auth_text_field.dart';
 
 /// Login page for email/phone authentication
 class LoginPage extends ConsumerStatefulWidget {
@@ -254,7 +255,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return null;
   }
 
-  void _handleLogin(authNotifier) {
+  void _handleLogin(AuthNotifier authNotifier) {
     if (!_formKey.currentState!.validate()) return;
 
     if (_isEmailLogin) {
