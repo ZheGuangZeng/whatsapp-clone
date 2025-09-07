@@ -9,7 +9,13 @@
       "Bash(/pm:prd-new tdd-refactor)",
       "Bash(/pm:epic-oneshot tdd-refactor)",
       "Bash(git pull:*)",
-      "WebFetch(domain:pub.dev)"
+      "WebFetch(domain:pub.dev)",
+      "Bash(test:*)",
+      "Bash(gh issue create:*)",
+      "Bash(git worktree:*)",
+      "Bash(git branch:*)",
+      "WebSearch",
+      "WebFetch(domain:claude.ai)"
     ],
     "deny": [],
     "ask": []
