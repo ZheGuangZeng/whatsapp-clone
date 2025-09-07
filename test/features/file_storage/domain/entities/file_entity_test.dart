@@ -227,7 +227,7 @@ void main() {
       totalBytes: 1024000,
       status: UploadStatus.uploading,
       error: null,
-      eta: Duration(seconds: 30),
+      eta: const Duration(seconds: 30),
       speed: 17000.0,
     );
 
@@ -317,7 +317,7 @@ void main() {
           totalBytes: 1024000,
           status: UploadStatus.uploading,
           error: null,
-          eta: Duration(seconds: 30),
+          eta: const Duration(seconds: 30),
           speed: 17000.0,
         );
 

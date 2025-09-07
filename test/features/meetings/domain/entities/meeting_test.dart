@@ -27,7 +27,7 @@ void main() {
         hostId: 'user-123',
         roomId: 'room-456',
         createdAt: testCreatedAt,
-        scheduledStartTime: testCreatedAt.add(Duration(hours: 1)),
+        scheduledStartTime: testCreatedAt.add(const Duration(hours: 1)),
         state: MeetingState.scheduled,
         settings: testSettings,
         participants: [],
@@ -43,7 +43,7 @@ void main() {
         expect(testMeeting.hostId, equals('user-123'));
         expect(testMeeting.roomId, equals('room-456'));
         expect(testMeeting.createdAt, equals(testCreatedAt));
-        expect(testMeeting.scheduledStartTime, equals(testCreatedAt.add(Duration(hours: 1))));
+        expect(testMeeting.scheduledStartTime, equals(testCreatedAt.add(const Duration(hours: 1))));
         expect(testMeeting.state, equals(MeetingState.scheduled));
         expect(testMeeting.settings, equals(testSettings));
         expect(testMeeting.participants, isEmpty);
@@ -101,7 +101,7 @@ void main() {
         // Arrange
         final baseTime = DateTime(2024, 1, 15, 14, 0, 0);
         final startTime = baseTime;
-        final endTime = baseTime.add(Duration(hours: 1));
+        final endTime = baseTime.add(const Duration(hours: 1));
         final activeMeeting = testMeeting.copyWith(
           state: MeetingState.active,
           actualStartTime: startTime,
@@ -118,21 +118,21 @@ void main() {
         expect(endedMeeting.actualEndTime, equals(endTime));
         expect(endedMeeting.isActive, isFalse);
         expect(endedMeeting.isEnded, isTrue);
-        expect(endedMeeting.duration, equals(Duration(hours: 1)));
+        expect(endedMeeting.duration, equals(const Duration(hours: 1)));
       });
 
       test('should calculate meeting duration correctly', () {
         // Arrange
         final baseTime = DateTime(2024, 1, 15, 15, 0, 0);
         final startTime = baseTime;
-        final endTime = baseTime.add(Duration(minutes: 45));
+        final endTime = baseTime.add(const Duration(minutes: 45));
         final meeting = testMeeting.copyWith(
           actualStartTime: startTime,
           actualEndTime: endTime,
         );
 
         // Act & Assert
-        expect(meeting.duration, equals(Duration(minutes: 45)));
+        expect(meeting.duration, equals(const Duration(minutes: 45)));
       });
 
       test('should return null duration if meeting not ended', () {
@@ -241,7 +241,7 @@ void main() {
           hostId: 'user-123',
           roomId: 'room-123',
           createdAt: DateTime.now(),
-          scheduledStartTime: DateTime.now().add(Duration(hours: 1)),
+          scheduledStartTime: DateTime.now().add(const Duration(hours: 1)),
           state: MeetingState.scheduled,
           settings: testSettings,
           participants: [],

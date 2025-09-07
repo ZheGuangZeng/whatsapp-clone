@@ -51,7 +51,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
     _animationController.forward();
   }
 
-  void _initializeApp() async {
+  Future<void> _initializeApp() async {
     // Initialize auth state
     await ref.read(authNotifierProvider.notifier).initialize();
     
