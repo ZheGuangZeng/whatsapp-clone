@@ -1,7 +1,7 @@
 ---
 created: 2025-09-05T13:56:24Z
-last_updated: 2025-09-06T12:49:11Z
-version: 2.1
+last_updated: 2025-09-07T06:48:52Z
+version: 2.2
 author: Claude Code PM System
 ---
 
@@ -83,6 +83,10 @@ dependencies:
   # Utilities
   equatable: ^2.0.5
   json_annotation: ^4.8.1
+  
+  # Storage & Preferences
+  flutter_secure_storage: ^9.0.0
+  shared_preferences: ^2.2.2
 ```
 
 ### Development Dependencies
