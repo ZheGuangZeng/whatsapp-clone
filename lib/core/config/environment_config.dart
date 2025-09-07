@@ -55,10 +55,17 @@ enum Environment {
   production,
 }
 
+/// Available service modes
+enum ServiceMode {
+  mock,
+  real,
+}
+
 /// Environment-specific configuration
 class AppEnvironmentConfig {
   const AppEnvironmentConfig({
     required this.environment,
+    required this.serviceMode,
     required this.appName,
     required this.appVersion,
     required this.supabaseUrl,
@@ -88,9 +95,11 @@ class AppEnvironmentConfig {
   });
 
   /// Development environment configuration
-  factory AppEnvironmentConfig.development() {
-    return const AppEnvironmentConfig(
+  factory AppEnvironmentConfig.development({ServiceMode? serviceMode}) {
+    final mode = serviceMode ?? _detectServiceMode();
+    return AppEnvironmentConfig(
       environment: Environment.development,
+      serviceMode: mode,
       appName: 'WhatsApp Clone (Dev)',
       appVersion: '1.0.0-dev',
       supabaseUrl: 'https://your-dev-project.supabase.co',
@@ -117,9 +126,11 @@ class AppEnvironmentConfig {
   }
   
   /// Staging environment configuration
-  factory AppEnvironmentConfig.staging() {
-    return const AppEnvironmentConfig(
+  factory AppEnvironmentConfig.staging({ServiceMode? serviceMode}) {
+    final mode = serviceMode ?? ServiceMode.real; // Staging defaults to real services
+    return AppEnvironmentConfig(
       environment: Environment.staging,
+      serviceMode: mode,
       appName: 'WhatsApp Clone (Staging)',
       appVersion: '1.0.0-staging',
       supabaseUrl: 'https://your-staging-project-sg.supabase.co',
@@ -150,9 +161,11 @@ class AppEnvironmentConfig {
   }
   
   /// Production environment configuration
-  factory AppEnvironmentConfig.production() {
-    return const AppEnvironmentConfig(
+  factory AppEnvironmentConfig.production({ServiceMode? serviceMode}) {
+    final mode = serviceMode ?? ServiceMode.real; // Production always uses real services
+    return AppEnvironmentConfig(
       environment: Environment.production,
+      serviceMode: mode,
       appName: 'WhatsApp Clone',
       appVersion: '1.0.0',
       supabaseUrl: 'https://your-production-project-sg.supabase.co',
@@ -183,6 +196,7 @@ class AppEnvironmentConfig {
   }
   
   final Environment environment;
+  final ServiceMode serviceMode;
   final String appName;
   final String appVersion;
   
@@ -242,6 +256,25 @@ class AppEnvironmentConfig {
     }
     return apiBaseUrl;
   }
+
+  /// Check if using mock services
+  bool get isMockMode => serviceMode == ServiceMode.mock;
+  
+  /// Check if using real services
+  bool get isRealMode => serviceMode == ServiceMode.real;
+
+  /// Detect service mode from environment variables
+  static ServiceMode _detectServiceMode() {
+    const serviceMode = String.fromEnvironment('SERVICE_MODE', defaultValue: 'mock');
+    
+    switch (serviceMode.toLowerCase()) {
+      case 'real':
+        return ServiceMode.real;
+      case 'mock':
+      default:
+        return ServiceMode.mock;
+    }
+  }
   
   /// Get Supabase URL with failover support
   String getSupabaseUrl({bool useSecondary = false}) {
@@ -261,7 +294,7 @@ class AppEnvironmentConfig {
   
   @override
   String toString() {
-    return 'AppEnvironmentConfig(environment: $environment, appName: $appName, version: $appVersion)';
+    return 'AppEnvironmentConfig(environment: $environment, serviceMode: $serviceMode, appName: $appName, version: $appVersion)';
   }
 }
 

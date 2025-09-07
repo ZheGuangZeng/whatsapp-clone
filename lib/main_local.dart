@@ -2,42 +2,89 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/theme/app_theme.dart';
+import 'core/config/environment_config.dart';
+import 'core/providers/service_factory.dart';
+import 'core/providers/service_providers.dart';
 import 'core/services/mock_services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize mock services for local development
-  await MockServices.initialize();
-  await MockSupabaseService().initialize();
+  // Initialize environment configuration
+  EnvironmentConfig.initialize(environment: Environment.development);
   
-  print('🚀 Starting WhatsApp Clone in LOCAL DEV mode with Mock Services');
+  final config = EnvironmentConfig.config;
+  
+  print('🚀 Starting WhatsApp Clone in LOCAL DEV mode');
+  print('🔧 Environment: ${config.environment}');
+  print('🎭 Service Mode: ${config.serviceMode}');
+  
+  // Validate services before starting the app
+  final validationResult = await ServiceFactory.validateServices(config);
+  
+  if (validationResult.isValid) {
+    print('✅ Service validation passed');
+    if (validationResult.hasWarnings) {
+      print('⚠️  Validation warnings:');
+      for (final warning in validationResult.warnings) {
+        print('   - $warning');
+      }
+    }
+  } else {
+    print('❌ Service validation failed');
+    for (final error in validationResult.errors) {
+      print('   - $error');
+    }
+  }
+  
+  // Initialize services based on configuration
+  if (config.isMockMode) {
+    await MockServices.initialize();
+    await MockSupabaseService().initialize();
+    print('🎭 Mock services initialized');
+  } else {
+    print('🔗 Real services will be initialized on demand');
+  }
   
   runApp(
-    const ProviderScope(
-      child: WhatsAppCloneLocalApp(),
+    ProviderScope(
+      child: WhatsAppCloneLocalApp(validationResult: validationResult),
     ),
   );
 }
 
 class WhatsAppCloneLocalApp extends ConsumerWidget {
-  const WhatsAppCloneLocalApp({super.key});
+  const WhatsAppCloneLocalApp({
+    super.key,
+    required this.validationResult,
+  });
+  
+  final ServiceValidationResult validationResult;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final serviceStatus = ref.watch(serviceConfigStatusProvider);
+    
     return MaterialApp(
-      title: 'WhatsApp Clone - Local Dev',
+      title: 'WhatsApp Clone - Local Dev (${serviceStatus.serviceModeDisplayName})',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       debugShowCheckedModeBanner: false,
-      home: const LocalDevHomePage(),
+      home: LocalDevHomePage(serviceStatus: serviceStatus, validationResult: validationResult),
     );
   }
 }
 
 class LocalDevHomePage extends StatefulWidget {
-  const LocalDevHomePage({super.key});
+  const LocalDevHomePage({
+    super.key,
+    required this.serviceStatus,
+    required this.validationResult,
+  });
+  
+  final ServiceConfigStatus serviceStatus;
+  final ServiceValidationResult validationResult;
 
   @override
   State<LocalDevHomePage> createState() => _LocalDevHomePageState();
@@ -47,11 +94,14 @@ class _LocalDevHomePageState extends State<LocalDevHomePage> {
   int _selectedIndex = 0;
   MockUser? _currentUser;
 
-  final _pages = [
-    const DevTestOverviewPage(),
+  late final _pages = [
+    DevTestOverviewPage(
+      serviceStatus: widget.serviceStatus,
+      validationResult: widget.validationResult,
+    ),
     const MockMessagingPage(),
     const MockMeetingPage(),
-    const DevToolsPage(),
+    DevToolsPage(serviceStatus: widget.serviceStatus),
   ];
 
   @override
@@ -108,7 +158,14 @@ class _LocalDevHomePageState extends State<LocalDevHomePage> {
 
 // Overview Page
 class DevTestOverviewPage extends StatelessWidget {
-  const DevTestOverviewPage({super.key});
+  const DevTestOverviewPage({
+    super.key,
+    required this.serviceStatus,
+    required this.validationResult,
+  });
+  
+  final ServiceConfigStatus serviceStatus;
+  final ServiceValidationResult validationResult;
 
   @override
   Widget build(BuildContext context) {
@@ -154,29 +211,68 @@ class DevTestOverviewPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '本地开发环境状态',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Text(
+                    '服务环境状态 (${serviceStatus.environmentDisplayName})',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
                   _ServiceStatusTile(
-                    service: 'Mock Supabase',
-                    status: 'Running',
-                    icon: Icons.cloud_done,
-                    color: Colors.green,
+                    service: 'Service Mode',
+                    status: serviceStatus.serviceModeDisplayName,
+                    icon: serviceStatus.serviceMode == ServiceMode.mock 
+                        ? Icons.theater_comedy 
+                        : Icons.cloud,
+                    color: serviceStatus.serviceMode == ServiceMode.mock 
+                        ? Colors.blue 
+                        : Colors.green,
                   ),
                   _ServiceStatusTile(
-                    service: 'Mock LiveKit',
-                    status: 'Ready',
-                    icon: Icons.videocam,
-                    color: Colors.blue,
+                    service: 'Validation Status',
+                    status: serviceStatus.isValid ? 'Valid' : 'Invalid',
+                    icon: serviceStatus.isValid ? Icons.check_circle : Icons.error,
+                    color: serviceStatus.isValid 
+                        ? (serviceStatus.hasWarnings ? Colors.orange : Colors.green)
+                        : Colors.red,
                   ),
-                  _ServiceStatusTile(
-                    service: 'Mock Analytics',
-                    status: 'Disabled',
-                    icon: Icons.analytics,
-                    color: Colors.orange,
-                  ),
+                  if (serviceStatus.serviceMode == ServiceMode.mock) ...[
+                    _ServiceStatusTile(
+                      service: 'Mock Supabase',
+                      status: 'Running',
+                      icon: Icons.cloud_done,
+                      color: Colors.green,
+                    ),
+                    _ServiceStatusTile(
+                      service: 'Mock LiveKit',
+                      status: 'Ready',
+                      icon: Icons.videocam,
+                      color: Colors.blue,
+                    ),
+                    _ServiceStatusTile(
+                      service: 'Mock Analytics',
+                      status: 'Disabled',
+                      icon: Icons.analytics,
+                      color: Colors.orange,
+                    ),
+                  ] else ...[
+                    _ServiceStatusTile(
+                      service: 'Real Supabase',
+                      status: 'Connected',
+                      icon: Icons.cloud_done,
+                      color: Colors.green,
+                    ),
+                    _ServiceStatusTile(
+                      service: 'Real LiveKit',
+                      status: 'Ready',
+                      icon: Icons.videocam,
+                      color: Colors.green,
+                    ),
+                    _ServiceStatusTile(
+                      service: 'Real Analytics',
+                      status: 'Enabled',
+                      icon: Icons.analytics,
+                      color: Colors.green,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -487,7 +583,12 @@ class _MockMeetingPageState extends State<MockMeetingPage> {
 
 // Dev Tools Page
 class DevToolsPage extends StatelessWidget {
-  const DevToolsPage({super.key});
+  const DevToolsPage({
+    super.key,
+    required this.serviceStatus,
+  });
+  
+  final ServiceConfigStatus serviceStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -560,22 +661,31 @@ class DevToolsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          const Card(
+          Card(
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     '环境信息',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 12),
-                  Text('模式: Local Development'),
-                  Text('外部服务: Mock Services'),
-                  Text('数据库: 内存中的Mock数据'),
-                  Text('认证: Mock认证（跳过验证）'),
-                  Text('监控: Mock监控服务'),
+                  const SizedBox(height: 12),
+                  Text('Environment: ${serviceStatus.environmentDisplayName}'),
+                  Text('Service Mode: ${serviceStatus.serviceModeDisplayName}'),
+                  if (serviceStatus.serviceMode == ServiceMode.mock) ...[
+                    const Text('Database: In-memory Mock data'),
+                    const Text('Authentication: Mock authentication (bypass)'),
+                    const Text('Monitoring: Mock monitoring services'),
+                  ] else ...[
+                    const Text('Database: Real Supabase connection'),
+                    const Text('Authentication: Real Supabase auth'),
+                    const Text('Monitoring: Real monitoring services'),
+                  ],
+                  Text('Validation: ${serviceStatus.isValid ? "✅ Passed" : "❌ Failed"}'),
+                  if (serviceStatus.hasWarnings) 
+                    const Text('Warnings: ⚠️ Check startup logs'),
                 ],
               ),
             ),
