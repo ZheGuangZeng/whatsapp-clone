@@ -1,0 +1,52 @@
+port: 7880
+bind_addresses:
+  - ""
+
+# WebRTC configuration
+rtc:
+  tcp_port: 7801
+  port_range_start: 50000
+  port_range_end: 50100
+  use_external_ip: false
+
+# API keys
+keys:
+  devkey: secret
+
+# TURN server configuration
+turn:
+  enabled: true
+  domain: localhost
+  tls_port: 5349
+  udp_port: 3478
+
+# Logging
+logging:
+  level: info
+  json: false
+
+# Room settings
+room:
+  auto_create: true
+  enable_recording: false
+  max_participants: 20
+  empty_timeout: 300s
+
+# Redis for scaling (disabled for local)
+redis:
+  address: ""
+
+# Audio/Video settings
+audio:
+  # Opus codec settings
+  opus:
+    max_playback_delay: 80
+
+video:
+  # VP8/VP9/H264 codec settings
+  hardware_encoder: false
+
+# Development settings
+development: true
+log_requests: true
+log_responses: true

@@ -1,0 +1,30 @@
+data_dir: /tmp/vector
+api:
+  enabled: true
+  address: 0.0.0.0:8686
+
+sources:
+  docker_logs:
+    type: docker_logs
+
+transforms:
+  only_supabase_logs:
+    type: filter
+    inputs:
+      - docker_logs
+    condition: starts_with!(.label."com.docker.compose.project", "supabase") || starts_with!(.container_name, "supabase")
+
+sinks:
+  logflare_sink:
+    type: http
+    inputs:
+      - only_supabase_logs
+    uri: http://analytics:4000/api/logs
+    method: post
+    auth:
+      strategy: bearer
+      token: your-super-secret-and-long-logflare-key
+    encoding:
+      codec: json
+    healthcheck:
+      enabled: false

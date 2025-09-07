@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # LiveKit Server for video/audio calls
+  livekit:
+    container_name: whatsapp-livekit-standalone
+    image: livekit/livekit-server:v1.4.3
+    restart: unless-stopped
+    ports:
+      - "7880:7880"  # HTTP
+      - "7881:7881"  # HTTPS  
+      - "50000-50100:50000-50100/udp"  # ICE/STUN
+    environment:
+      LIVEKIT_KEYS: "devkey: secret"
+      LIVEKIT_CONFIG: |
+        port: 7880
+        bind_addresses:
+          - ""
+        rtc:
+          tcp_port: 7801
+          port_range_start: 50000
+          port_range_end: 50100
+          use_external_ip: false
+        keys:
+          "devkey": "secret"
+        turn:
+          enabled: true
+          domain: localhost
+          tls_port: 5349
+          udp_port: 3478
+        logging:
+          level: info
+          json: false
+        room:
+          auto_create: true
+          max_participants: 20
+          empty_timeout: 300
+        development: true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7880"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
