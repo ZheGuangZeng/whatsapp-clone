@@ -1,4 +1,4 @@
-name: WhatsApp Clone CI/CD Pipeline
+name: WhatsApp Clone Flutter Mobile CI/CD
 
 on:
   push:
@@ -8,22 +8,24 @@ on:
     branches: [ main, develop ]
 
 env:
-  # Docker registry
-  DOCKER_REGISTRY: docker.io
-  DOCKER_REPOSITORY: whatsappclone/web
+  # Flutter
+  FLUTTER_VERSION: '3.24.0'
   
-  # Kubernetes
-  KUSTOMIZE_VERSION: 5.0.3
-  KUBECTL_VERSION: 1.28.0
+  # iOS
+  IOS_APP_ID: '1234567890'  # Replace with actual App Store Connect App ID
+  IOS_BUNDLE_ID: 'com.whatsappclone.app'
   
-  # AWS
-  AWS_REGION: ap-southeast-1
-  EKS_CLUSTER_NAME: whatsapp-clone-production
+  # Android
+  ANDROID_PACKAGE_NAME: 'com.whatsappclone.app'
+  ANDROID_UPLOAD_KEY_ALIAS: 'upload'
+  
+  # Versioning
+  VERSION_CODE_OFFSET: 1000000
 
 jobs:
   # Test Job
   test:
-    name: Run Tests
+    name: Run Flutter Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     
@@ -36,12 +38,15 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.24.0'
+        flutter-version: ${{ env.FLUTTER_VERSION }}
         channel: 'stable'
         cache: true
     
     - name: Get Flutter dependencies
       run: flutter pub get
+    
+    - name: Generate code
+      run: flutter packages pub run build_runner build --delete-conflicting-outputs
     
     - name: Analyze code
       run: flutter analyze --fatal-infos
@@ -52,12 +57,13 @@ jobs:
     - name: Run unit tests
       run: flutter test --coverage --reporter=expanded
     
-    - name: Run integration tests (headless)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y chromium-browser
-        export CHROME_EXECUTABLE=/usr/bin/chromium-browser
-        flutter test integration_test/ --device-id=chrome --headless
+    - name: Run integration tests (Android)
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 33
+        target: google_apis
+        arch: x86_64
+        script: flutter test integration_test/
     
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
@@ -77,6 +83,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        cache: true
+    
+    - name: Get dependencies
+      run: flutter pub get
+    
+    - name: Run Flutter security audit
+      run: |
+        dart pub deps --json > deps.json
+        # Check for known vulnerable packages
+        flutter pub deps --json | grep -E '"version"|"name"' || true
+    
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
       with:
@@ -90,269 +112,344 @@ jobs:
       with:
         sarif_file: 'trivy-results.sarif'
 
-  # Build and Push Docker Image
-  build:
-    name: Build and Push Docker Image
+  # Build Android APK
+  build-android:
+    name: Build Android APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [test, security]
     if: github.event_name != 'pull_request'
     
     outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
-      image-digest: ${{ steps.build.outputs.digest }}
+      version-name: ${{ steps.version.outputs.version-name }}
+      version-code: ${{ steps.version.outputs.version-code }}
+      apk-path: ${{ steps.build.outputs.apk-path }}
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
       with:
-        registry: ${{ env.DOCKER_REGISTRY }}
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+        fetch-depth: 0
     
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v5
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
       with:
-        images: ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        cache: true
     
-    - name: Build and push Docker image
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+    
+    - name: Calculate version
+      id: version
+      run: |
+        VERSION_NAME=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+        VERSION_CODE=$((${VERSION_CODE_OFFSET} + ${GITHUB_RUN_NUMBER}))
+        echo "version-name=${VERSION_NAME}" >> $GITHUB_OUTPUT
+        echo "version-code=${VERSION_CODE}" >> $GITHUB_OUTPUT
+        echo "Building version ${VERSION_NAME} (${VERSION_CODE})"
+    
+    - name: Get Flutter dependencies
+      run: flutter pub get
+    
+    - name: Generate code
+      run: flutter packages pub run build_runner build --delete-conflicting-outputs
+    
+    - name: Configure Android signing (Release)
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
+        echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> android/key.properties
+        echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
+        echo "keyAlias=${{ env.ANDROID_UPLOAD_KEY_ALIAS }}" >> android/key.properties
+        echo "storeFile=keystore.jks" >> android/key.properties
+    
+    - name: Build Android APK (Debug)
+      if: "!startsWith(github.ref, 'refs/tags/v')"
+      run: |
+        flutter build apk --debug --build-name=${{ steps.version.outputs.version-name }} --build-number=${{ steps.version.outputs.version-code }}
+        echo "apk-path=build/app/outputs/flutter-apk/app-debug.apk" >> $GITHUB_OUTPUT
       id: build
-      uses: docker/build-push-action@v5
+    
+    - name: Build Android APK (Release)
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        flutter build apk --release --build-name=${{ steps.version.outputs.version-name }} --build-number=${{ steps.version.outputs.version-code }}
+        echo "apk-path=build/app/outputs/flutter-apk/app-release.apk" >> $GITHUB_OUTPUT
+      id: build-release
+    
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
       with:
-        context: .
-        platforms: linux/amd64,linux/arm64
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        build-args: |
-          BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
-          VCS_REF=${{ github.sha }}
-          VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+        name: android-apk-${{ steps.version.outputs.version-name }}
+        path: ${{ steps.build.outputs.apk-path || steps.build-release.outputs.apk-path }}
+        retention-days: 30
 
-  # Deploy to Staging
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: build
-    if: github.ref == 'refs/heads/develop'
-    environment: staging
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING }}
-        aws-region: ${{ env.AWS_REGION }}
-    
-    - name: Setup kubectl
-      uses: azure/setup-kubectl@v3
-      with:
-        version: ${{ env.KUBECTL_VERSION }}
-    
-    - name: Setup kustomize
-      run: |
-        curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-        sudo mv kustomize /usr/local/bin/
-    
-    - name: Update kubeconfig
-      run: |
-        aws eks update-kubeconfig \
-          --region ${{ env.AWS_REGION }} \
-          --name whatsapp-clone-staging
-    
-    - name: Deploy to staging
-      run: |
-        cd infrastructure/kubernetes/overlays/staging
-        kustomize edit set image whatsapp-clone=${{ needs.build.outputs.image-tag }}
-        kustomize build . | kubectl apply -f -
-    
-    - name: Verify deployment
-      run: |
-        kubectl rollout status deployment/whatsapp-clone-web -n whatsapp-clone-staging
-        kubectl get services -n whatsapp-clone-staging
-
-  # Deploy to Production
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: [build, deploy-staging]
-    if: startsWith(github.ref, 'refs/tags/v')
-    environment: production
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Configure AWS credentials (Singapore)
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
-        aws-region: ap-southeast-1
-    
-    - name: Setup kubectl
-      uses: azure/setup-kubectl@v3
-      with:
-        version: ${{ env.KUBECTL_VERSION }}
-    
-    - name: Setup kustomize
-      run: |
-        curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-        sudo mv kustomize /usr/local/bin/
-    
-    - name: Update kubeconfig (Singapore)
-      run: |
-        aws eks update-kubeconfig \
-          --region ap-southeast-1 \
-          --name whatsapp-clone-production-sg
-    
-    - name: Deploy to Singapore
-      run: |
-        cd infrastructure/kubernetes/overlays/production
-        kustomize edit set image whatsapp-clone=${{ needs.build.outputs.image-tag }}
-        kustomize build . | kubectl apply -f -
-    
-    - name: Verify Singapore deployment
-      run: |
-        kubectl rollout status deployment/whatsapp-clone-web -n whatsapp-clone-prod
-        kubectl get services -n whatsapp-clone-prod
-    
-    # Deploy to Japan region
-    - name: Configure AWS credentials (Japan)
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD_JP }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD_JP }}
-        aws-region: ap-northeast-1
-    
-    - name: Update kubeconfig (Japan)
-      run: |
-        aws eks update-kubeconfig \
-          --region ap-northeast-1 \
-          --name whatsapp-clone-production-jp
-    
-    - name: Deploy to Japan
-      run: |
-        cd infrastructure/kubernetes/overlays/production
-        # Use Japan-specific configuration
-        kustomize edit set image whatsapp-clone=${{ needs.build.outputs.image-tag }}
-        kustomize build . | kubectl apply -f -
-    
-    - name: Verify Japan deployment
-      run: |
-        kubectl rollout status deployment/whatsapp-clone-web -n whatsapp-clone-prod
-        kubectl get services -n whatsapp-clone-prod
-
-  # Infrastructure Deployment
-  deploy-infrastructure:
-    name: Deploy Infrastructure
-    runs-on: ubuntu-latest
+  # Build iOS IPA
+  build-ios:
+    name: Build iOS IPA
+    runs-on: macos-14
     timeout-minutes: 45
-    if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[infra]')
-    environment: production
+    needs: [test, security]
+    if: github.event_name != 'pull_request'
+    
+    outputs:
+      version-name: ${{ steps.version.outputs.version-name }}
+      version-code: ${{ steps.version.outputs.version-code }}
+      ipa-path: ${{ steps.build.outputs.ipa-path }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        cache: true
+    
+    - name: Calculate version
+      id: version
+      run: |
+        VERSION_NAME=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
+        VERSION_CODE=$((${VERSION_CODE_OFFSET} + ${GITHUB_RUN_NUMBER}))
+        echo "version-name=${VERSION_NAME}" >> $GITHUB_OUTPUT
+        echo "version-code=${VERSION_CODE}" >> $GITHUB_OUTPUT
+        echo "Building version ${VERSION_NAME} (${VERSION_CODE})"
+    
+    - name: Get Flutter dependencies
+      run: flutter pub get
+    
+    - name: Generate code
+      run: flutter packages pub run build_runner build --delete-conflicting-outputs
+    
+    - name: Install iOS certificates
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        BUILD_CERTIFICATE_BASE64: ${{ secrets.IOS_BUILD_CERTIFICATE_BASE64 }}
+        P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
+        BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_BUILD_PROVISION_PROFILE_BASE64 }}
+        KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+      run: |
+        # Create variables
+        CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+        PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+        KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+        
+        # Import certificate and provisioning profile from secrets
+        echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
+        echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+        
+        # Create temporary keychain
+        security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+        security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+        
+        # Import certificate to keychain
+        security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+        security list-keychain -d user -s $KEYCHAIN_PATH
+        
+        # Apply provisioning profile
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+    
+    - name: Build iOS (Debug)
+      if: "!startsWith(github.ref, 'refs/tags/v')"
+      run: |
+        flutter build ios --debug --no-codesign --build-name=${{ steps.version.outputs.version-name }} --build-number=${{ steps.version.outputs.version-code }}
+        echo "ipa-path=build/ios/iphoneos/Runner.app" >> $GITHUB_OUTPUT
+      id: build
+    
+    - name: Build iOS (Release)
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: |
+        flutter build ios --release --build-name=${{ steps.version.outputs.version-name }} --build-number=${{ steps.version.outputs.version-code }}
+        
+        # Create IPA
+        mkdir -p build/ios/ipa
+        xcodebuild -workspace ios/Runner.xcworkspace \
+                   -scheme Runner \
+                   -configuration Release \
+                   -destination 'generic/platform=iOS' \
+                   -archivePath build/ios/Runner.xcarchive \
+                   archive
+        
+        xcodebuild -exportArchive \
+                   -archivePath build/ios/Runner.xcarchive \
+                   -exportPath build/ios/ipa \
+                   -exportOptionsPlist ios/ExportOptions.plist
+        
+        echo "ipa-path=build/ios/ipa/Runner.ipa" >> $GITHUB_OUTPUT
+      id: build-release
+    
+    - name: Upload IPA artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ios-ipa-${{ steps.version.outputs.version-name }}
+        path: ${{ steps.build.outputs.ipa-path || steps.build-release.outputs.ipa-path }}
+        retention-days: 30
+    
+    - name: Clean up keychain
+      if: always() && startsWith(github.ref, 'refs/tags/v')
+      run: |
+        security delete-keychain $RUNNER_TEMP/app-signing.keychain-db || true
+
+  # Deploy to App Store Connect (iOS)
+  deploy-ios:
+    name: Deploy to App Store Connect
+    runs-on: macos-14
+    timeout-minutes: 30
+    needs: build-ios
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: ios-production
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+    - name: Download IPA artifact
+      uses: actions/download-artifact@v3
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
-        aws-region: ${{ env.AWS_REGION }}
+        name: ios-ipa-${{ needs.build-ios.outputs.version-name }}
     
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
+    - name: Upload to App Store Connect
+      env:
+        APP_STORE_CONNECT_USERNAME: ${{ secrets.APP_STORE_CONNECT_USERNAME }}
+        APP_STORE_CONNECT_PASSWORD: ${{ secrets.APP_STORE_CONNECT_PASSWORD }}
+      run: |
+        xcrun altool --upload-app \
+          --type ios \
+          --file Runner.ipa \
+          --username "$APP_STORE_CONNECT_USERNAME" \
+          --password "$APP_STORE_CONNECT_PASSWORD" \
+          --verbose
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        terraform_version: 1.5.0
-    
-    - name: Terraform Init
-      run: |
-        cd infrastructure/terraform
-        terraform init
-    
-    - name: Terraform Plan
-      run: |
-        cd infrastructure/terraform
-        terraform plan \
-          -var="environment=production" \
-          -var="region=${{ env.AWS_REGION }}" \
-          -out=tfplan
-    
-    - name: Terraform Apply
-      run: |
-        cd infrastructure/terraform
-        terraform apply tfplan
+        tag_name: ${{ github.ref }}
+        release_name: iOS Release ${{ needs.build-ios.outputs.version-name }}
+        body: |
+          iOS Release ${{ needs.build-ios.outputs.version-name }}
+          
+          Changes:
+          - Automated release from CI/CD pipeline
+          
+          Build Information:
+          - Version: ${{ needs.build-ios.outputs.version-name }}
+          - Build Number: ${{ needs.build-ios.outputs.version-code }}
+          - Commit: ${{ github.sha }}
+        draft: false
+        prerelease: false
 
-  # Performance Tests
-  performance-test:
-    name: Performance Tests
+  # Deploy to Google Play Console (Android)
+  deploy-android:
+    name: Deploy to Google Play Console
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: deploy-staging
+    needs: build-android
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: android-production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download APK artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: android-apk-${{ needs.build-android.outputs.version-name }}
+    
+    - name: Setup Google Play credentials
+      run: |
+        echo "${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}" > google-play-service-account.json
+    
+    - name: Upload to Google Play Console
+      uses: r0adkll/upload-google-play@v1
+      with:
+        serviceAccountJson: google-play-service-account.json
+        packageName: ${{ env.ANDROID_PACKAGE_NAME }}
+        releaseFiles: app-release.apk
+        track: internal # Change to 'production' for production releases
+        status: completed
+        inAppUpdatePriority: 2
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Android Release ${{ needs.build-android.outputs.version-name }}
+        body: |
+          Android Release ${{ needs.build-android.outputs.version-name }}
+          
+          Changes:
+          - Automated release from CI/CD pipeline
+          
+          Build Information:
+          - Version: ${{ needs.build-android.outputs.version-name }}
+          - Build Number: ${{ needs.build-android.outputs.version-code }}
+          - Commit: ${{ github.sha }}
+        draft: false
+        prerelease: false
+    
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -f google-play-service-account.json || true
+
+  # Mobile App Performance Tests
+  performance-test:
+    name: Mobile Performance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [build-android, build-ios]
     if: github.ref == 'refs/heads/develop'
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
       with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: infrastructure/testing/package-lock.json
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        cache: true
     
-    - name: Install dependencies
-      run: |
-        cd infrastructure/testing
-        npm install
+    - name: Get dependencies
+      run: flutter pub get
     
-    - name: Run load tests
-      run: |
-        cd infrastructure/testing
-        npx k6 run \
-          --env TARGET_URL=https://staging.whatsappclone.com \
-          --env DURATION=5m \
-          --env VUS=100 \
-          load-test.js
+    - name: Run Flutter performance tests
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 33
+        target: google_apis
+        arch: x86_64
+        script: |
+          flutter test --reporter=expanded test/performance/
+          flutter drive --target=test_driver/app.dart --driver=test_driver/performance_test.dart
 
   # Cleanup
   cleanup:
-    name: Cleanup
+    name: Cleanup Build Artifacts
     runs-on: ubuntu-latest
     if: always()
-    needs: [test, security, build, deploy-staging, deploy-production, deploy-infrastructure, performance-test]
+    needs: [test, security, build-android, build-ios, deploy-android, deploy-ios, performance-test]
     
     steps:
-    - name: Cleanup Docker images
+    - name: Cleanup build artifacts
       run: |
-        docker system prune -a -f || true
-    
-    - name: Cleanup runner
-      run: |
-        sudo rm -rf $GITHUB_WORKSPACE || true
+        echo "Cleaning up temporary build artifacts..."
+        # Artifacts are automatically cleaned up by GitHub Actions
+        # based on retention policy (30 days for APKs/IPAs)

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="false">
+        <!-- Supabase domains -->
+        <domain includeSubdomains="true">supabase.co</domain>
+        <domain includeSubdomains="true">supabase.com</domain>
+        
+        <!-- LiveKit domains -->
+        <domain includeSubdomains="true">livekit.io</domain>
+        <domain includeSubdomains="true">livekit.cloud</domain>
+        
+        <!-- Add your custom backend domains here -->
+        <!-- <domain includeSubdomains="true">your-api-domain.com</domain> -->
+    </domain-config>
+    
+    <!-- Development configuration (remove in production) -->
+    <debug-overrides>
+        <trust-anchors>
+            <!-- Trust user added CAs during development -->
+            <certificates src="user"/>
+            <!-- Trust system CAs -->
+            <certificates src="system"/>
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>
