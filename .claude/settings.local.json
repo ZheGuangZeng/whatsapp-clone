@@ -16,7 +16,8 @@
       "Bash(git branch:*)",
       "WebSearch",
       "WebFetch(domain:claude.ai)",
-      "WebFetch(domain:)"
+      "WebFetch(domain:)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

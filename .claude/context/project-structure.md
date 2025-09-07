@@ -1,7 +1,7 @@
 ---
 created: 2025-09-05T13:56:24Z
-last_updated: 2025-09-07T02:32:01Z
-version: 2.2
+last_updated: 2025-09-07T12:33:09Z
+version: 2.3
 author: Claude Code PM System
 ---
 
@@ -17,21 +17,28 @@ whatsapp-clone/
 │   ├── context/                       # Project context documentation
 │   ├── epics/                         # Epic decomposition files
 │   │   ├── archived/                  # Completed epics archive
-│   │   │   └── tdd-refactor-2025-09-07/  # TDD refactor epic (completed)
-│   │   └── production-ready/          # Current production readiness epic
-│   │       ├── epic.md                # Epic overview and GitHub Issue #20
-│   │       ├── 21.md                  # Task 1: Code Quality Excellence (P0)
-│   │       ├── 22.md                  # Task 2: Performance Optimization (P1)
-│   │       ├── 23.md                  # Task 3: CI/CD Pipeline (P1) 
-│   │       ├── 24.md                  # Task 4: Production Infrastructure (P2)
-│   │       └── 25.md                  # Task 5: Monitoring & Observability (P2)
+│   │   │   ├── production-ready-2025-09-07/  # Production readiness epic (completed)
+│   │   │   └── tdd-refactor-2025-09-07/      # TDD refactor epic (completed)
+│   │   └── local-real-env-validation/ # Current local real environment epic ✅ COMPLETE
+│   │       ├── epic.md                # Epic overview and GitHub Issue #26
+│   │       ├── 27.md → 34.md          # Tasks 27-34: Real environment implementation
+│   │       ├── execution-status.md    # Epic execution tracking
+│   │       ├── github-mapping.md      # GitHub issue mappings
+│   │       └── updates/               # Task progress updates
 │   ├── prds/                          # Product Requirements Documents
+│   │   ├── local-real-env-validation.md  # Local environment validation PRD ✅
 │   │   └── production-ready.md        # Production readiness PRD ✅
 │   ├── rules/                         # CCMP workflow rules
 │   ├── scripts/                       # Automation scripts
 │   └── tracking/                      # Project monitoring & health reports ✅
 ├── install/                           # CCPM installation utilities
 ├── .gitignore                         # Git ignore patterns
+├── docker-compose.local.yml          # 🆕 Local development Docker stack (Supabase + LiveKit)
+├── docker-compose.livekit.yml        # 🆕 Standalone LiveKit configuration
+├── .env.local                         # 🆕 Local environment configuration
+├── LOCAL_DEV_README.md               # 🆕 Local development setup guide
+├── LOCAL_REAL_ENV_VALIDATION_PRD.md  # 🆕 Local environment validation PRD
+├── VERIFICATION_GUIDE.md             # 🆕 Step-by-step verification guide
 ├── AGENTS.md                          # Sub-agent documentation
 ├── CLAUDE.md                          # Project development rules
 ├── COMMANDS.md                        # CCPM command reference
@@ -55,15 +62,28 @@ whatsapp-clone/
 ├── android/                           # Android-specific configurations ✅
 ├── ios/                               # iOS-specific configurations ✅
 ├── lib/                               # Flutter application source ✅
+│   ├── main_local.dart               # 🆕 Local development app entry point
+│   ├── main_dev.dart                 # 🆕 Development environment entry point
 │   ├── app/                           # Application-level components ✅
 │   │   ├── pages/                     # App shell pages (splash, home, settings)
 │   │   ├── router/                    # GoRouter configuration
 │   │   └── theme/                     # App theming and styling
 │   ├── core/                          # Core utilities and constants ✅
+│   │   ├── config/                    # 🆕 Environment configuration
+│   │   │   └── environment_config.dart  # Service mode switching
 │   │   ├── constants/                 # App constants (Supabase URLs, etc.)
 │   │   ├── errors/                    # Error handling (failures, exceptions)
 │   │   ├── utils/                     # Result wrapper and utilities
-│   │   └── providers/                 # Supabase provider
+│   │   ├── providers/                 # 🆕 Enhanced service providers
+│   │   │   ├── service_factory.dart    # Service creation and validation
+│   │   │   └── service_providers.dart  # Riverpod service providers
+│   │   └── services/                  # 🆕 Real service implementations
+│   │       ├── real_supabase_auth_service.dart    # Real Supabase Auth adapter
+│   │       ├── real_supabase_message_service.dart # Real messaging service
+│   │       ├── real_livekit_meeting_service.dart  # Real LiveKit adapter
+│   │       ├── mock_services.dart                 # Mock service implementations
+│   │       ├── service_manager.dart               # Service lifecycle management
+│   │       └── livekit_token_service.dart         # LiveKit JWT token generation
 │   ├── features/                      # Feature-based organization ✅
 │   │   ├── auth/                      # Authentication feature ✅ COMPLETE
 │   │   │   ├── data/                  # Auth repository, models, sources
@@ -91,9 +111,29 @@ whatsapp-clone/
 │       ├── auth/                      # Auth entity and use case tests
 │       ├── chat/                      # Message entity and use case tests
 │       └── file_storage/              # File entity and use case tests
+├── scripts/                           # 🆕 Automation and validation scripts
+│   ├── validate-real-env.sh          # Environment validation script
+│   ├── reset-test-data.sh            # Test data management
+│   ├── generate-test-data.py         # Advanced test data generation
+│   ├── start-local-dev.sh            # Local development startup
+│   └── verify-local-env.sh           # Service verification
 ├── supabase/                          # Supabase configuration ✅
+│   ├── config.toml                   # 🆕 Supabase project configuration
+│   ├── seed.sql                      # 🆕 Realistic test data seeding
 │   ├── functions/                     # Edge Functions (LiveKit tokens)
-│   └── migrations/                    # Database schema and RLS policies
+│   └── migrations/                    # 🆕 Production-identical database schema
+│       ├── 20250907000001_create_user_profiles.sql
+│       ├── 20250907000002_create_messaging_tables.sql
+│       ├── 20250907000003_create_messaging_rls_policies.sql
+│       ├── 20250907000004_create_helper_functions.sql
+│       ├── 20250907000005_create_meeting_tables.sql
+│       └── 20250907000006_create_meeting_rls_policies.sql
+├── volumes/                           # 🆕 Docker volume configurations
+│   ├── api/kong.yml                  # Kong API Gateway config
+│   ├── db/                           # Database initialization scripts
+│   ├── functions/                    # Function configurations
+│   ├── livekit/                      # LiveKit server config
+│   └── logs/                         # Logging configurations
 ├── web/                               # Web platform support ✅
 ├── pubspec.yaml                       # Dependencies with LiveKit, Riverpod ✅
 └── pubspec.lock                       # Locked dependencies ✅

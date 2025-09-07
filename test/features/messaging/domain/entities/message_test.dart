@@ -5,16 +5,16 @@ void main() {
   group('Message Entity', () {
     // Test data
     const testId = 'message-123';
-    const testSenderId = 'user-456';
+    const testUserId = 'user-456';
     const testContent = 'Hello, World!';
-    final testTimestamp = DateTime(2024, 1, 15, 10, 30);
+    final testCreatedAt = DateTime(2024, 1, 15, 10, 30);
     const testRoomId = 'room-789';
 
     final testMessage = Message(
       id: testId,
-      senderId: testSenderId,
+      userId: testUserId,
       content: testContent,
-      timestamp: testTimestamp,
+      createdAt: testCreatedAt,
       roomId: testRoomId,
     );
 
@@ -22,16 +22,19 @@ void main() {
       test('should create message with all required fields', () {
         // Assert
         expect(testMessage.id, testId);
-        expect(testMessage.senderId, testSenderId);
+        expect(testMessage.userId, testUserId);
         expect(testMessage.content, testContent);
-        expect(testMessage.timestamp, testTimestamp);
+        expect(testMessage.createdAt, testCreatedAt);
         expect(testMessage.roomId, testRoomId);
       });
 
       test('should have default values for optional fields', () {
         // Assert
-        expect(testMessage.messageType, MessageType.text);
-        expect(testMessage.isRead, false);
+        expect(testMessage.type, MessageType.text);
+        expect(testMessage.replyTo, null);
+        expect(testMessage.metadata, const {});
+        expect(testMessage.editedAt, null);
+        expect(testMessage.deletedAt, null);
       });
 
       test('should accept custom values for optional fields', () {
