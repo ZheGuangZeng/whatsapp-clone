@@ -112,6 +112,7 @@ class AppEnvironmentConfig {
       maxRetryAttempts: 3,
       retryDelayMs: 1000,
       cacheExpiryMinutes: 15,
+      sentryDsn: 'https://test@o0.ingest.sentry.io/0000000',
     );
   }
   
